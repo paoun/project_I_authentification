@@ -9,6 +9,7 @@ class App < ActiveRecord::Base
 	#Validators
 	validates :name, :presence => true
 	validates :url, :presence => true
+	validates :name, :uniqueness => true
 	validates :url, :uniqueness => true
 
 end

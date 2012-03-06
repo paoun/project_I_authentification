@@ -1,6 +1,10 @@
-require 'active_record'
+$:.unshift File.dirname(__FILE__)
+#require 'active_record'
+require 'password'
 
 class User < ActiveRecord::Base
+
+	include Password
 
 	#Relations
 	has_many :uses
