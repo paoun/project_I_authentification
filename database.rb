@@ -1,5 +1,7 @@
 require 'active_record'
 require_relative 'lib/user'
+require_relative 'lib/use'
+require_relative 'lib/app'
 
 config_file = File.join(File.dirname(__FILE__),"config","database.yml")
 
