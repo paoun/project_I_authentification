@@ -13,74 +13,78 @@ describe "the authentication" do
 	describe "The user wants to acces at register page" do
 
 		it "status should return 200 if the user go to /sauth/register" do
-			get '/sauth/appli_cliente_1/register'
+			get '/sauth/sessions/register'
 			last_response.status.should == 200
 		end
 
 	end
 
 	describe "The user wants to connect" do
+	
 
-		context "when the user is registered" do
+		context "when the user is registered (but not connected)" do
 
-			it "should redirect user with login not valid" do
-				user = User.new
-				user.login = "Pat"
-				user.password = "pass"
-				user.save
-				post '/sauth/sessions', params={'login' => "PatPat", 'password' => "pass"}
-				last_response.status.should == 302
-				last_response.headers["Location"].should == 'http://example.org/sauth/appli_cliente_1/new?info=Login_Not_Exist'
+			it "should user redirect in user page with good login and password" do
+				user = double(User)
+				user.stub(:login).and_return('Patrick')
+				user.stub(:password).and_return('9d4e1e23bd5b727046a9e3b4b7db57bd8d6ee684')
+				User.stub(:find_by_login).with('Patrick').and_return(user)
+				post '/sauth/sessions/register', params={'login' => "Patrick", 'password' => "pass"}
+				follow_redirect!
+				last_request.path.should == '/'
 			end
 
-			it "should redirect user with password not valid" do
-				user = User.new
-				user.login = "Pat"
-				user.password = "pass"
-				user.save
-				post '/sauth/sessions', params={'login' => "Pat", 'password' => "mdp"}
-				last_response.status.should == 302
-				last_response.headers["Location"].should == 'http://example.org/sauth/appli_cliente_1/new?info=Pass_Not_Valid'
+			it "should user stay in login page because login is not valid" do
+				post '/sauth/sessions/register', params={'login' => "PatPat", 'password' => "pass"}
+				last_response.should be_ok
+				last_request.path.should == '/sauth/sessions/register'
 			end
-		end
 
-		context "when the user is not registered" do
-		
-			it "should redirect user at /sauth/appli_cliente_1/new?info=login_not_exist" do
-				post '/sauth/sessions', params={'login' => "Patrick", 'password' => "pass"}
-				last_response.status.should == 302
-				last_response.headers["Location"].should == 'http://example.org/sauth/appli_cliente_1/new?info=Login_Not_Exist'
+			it "should user stay in login page because password is not valid" do
+				user = double(User)
+				user.stub(:login).and_return('Patrick')
+				user.stub(:password).and_return('9d4e1e23bd5b727046a9e3b4b7db57bd8d6ee684')
+				User.stub(:find_by_login).with('Patrick').and_return(user)
+				post '/sauth/sessions/register', params={'login' => "Patrick", 'password' => "mdp"}
+				last_response.should be_ok
+				last_request.path.should == '/sauth/sessions/register'
 			end
 		end
+
 	end
 
-	describe "The user wants to registered" do
+	describe "The user wants to create a new count" do
 
-		context "when the login is not exist" do
+		context "when the login is not exist in the database" do
 
-			it "should redirect user at /sauth/appli_cliente_1/register?info=Missing_Login_Or_Password because missing login or password" do
-				post '/sauth/register', params={'password' => "pass"}
-				last_response.status.should == 302
-				last_response.headers["Location"].should == 'http://example.org/sauth/appli_cliente_1/register?info=Missing_Login_Or_Password'			
+			it "should user redirect in user page beacuse informations are good" do
+				post '/sauth/sessions/new', params={'login' => "Patrick", 'password' => "pass", 'password_confirmation' => "pass"}
+				last_response.should be_redirect
+				follow_redirect!
+				last_request.path.should == '/'
 			end
 
-			it "should redirect user at /sauth/appli_cliente_1/new?info=Welcome_Now_You_Can_Connect" do
-				post '/sauth/register', params={'login' => "Patrick", 'password' => "pass"}
-				last_response.status.should == 302
-				last_response.headers["Location"].should == 'http://example.org/sauth/appli_cliente_1/new?info=Welcome_Now_You_Can_Connect'
+			it "should user stay in inscription page because login is not present" do
+				post '/sauth/sessions/new', params={'password' => "pass", 'password_confirmation' => "pass"}
+				last_response.should be_ok
+				last_request.path.should == '/sauth/sessions/new'
+			end
+
+			it "should user stay in inscription page because login is not good" do
+				post '/sauth/sessions/new', params={'login' => "_-", 'password' => "pass", 'password' => "pass"}
+				last_response.should be_ok
+				last_request.path.should == '/sauth/sessions/new'
 			end
 		end
 
-		context "when the login exist" do
+		context "when the login exist in the database" do
 
-			it "should redirect user at /sauth/appli_cliente_1/register?info=Login_Used because login exist" do
-				user = User.new
-				user.login = "TOTO"
-				user.password = "pass"
-				user.save
-				post '/sauth/register', params={'login' => "TOTO", 'password' => "mdp"}
-				last_response.status.should == 302
-				last_response.headers["Location"].should == 'http://example.org/sauth/appli_cliente_1/register?info=Login_Used'
+			it "should stay in inscription page because login exist" do
+				user = double(User)
+				user.stub(:login).and_return('TOTO')
+				user.stub(:password).and_return('password')
+				post '/sauth/sessions/new', params={'login' => "TOTO", 'password' => "mdp", 'password' => "mdp"}
+				last_request.path.should == '/sauth/sessions/new'
 			end
 		end
 	User.all.each{|user| user.destroy}

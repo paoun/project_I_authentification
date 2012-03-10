@@ -5,9 +5,18 @@
 </head>
 <body>
 
-<h1>New session</h1>
+<h1>Identification</h1>
 
-<form action="/sauth/register" method="post">
+<% if @error_informations %>
+	<p class="error_information">Une erreur est survenue lors de la saisie des informations.</p>
+<% end %>
+
+<% if @error_login_not_exists %>
+	<p class="error_login_not_exists">Le login n'existe pas. Etes vous sûr d'avoir un compte?</p>
+	<a href="/sauth/sessions/new">Créer un compte</a>
+<% end %>
+	
+<form action="/sauth/sessions/register" method="post">
   <div class="field">
     <label for="session_login">Login</label><br />
 
@@ -18,7 +27,7 @@
     <input id="session_password" name="password" size="30" type="password" />
   </div>
   <div class="actions">
-    <input name="commit" type="submit" value="Create Session" />
+    <input name="commit" type="submit" value="S'identifier" />
 
   </div>
 </form>

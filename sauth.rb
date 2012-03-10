@@ -1,79 +1,96 @@
+#encoding: UTF-8
 require 'sinatra'
-
-
 $: << File.dirname(__FILE__)
 require 'Spec/spec_helper'
+enable :sessions
+
 helpers do
 	def current_user
-		session["current_user"]
+		session[:current_user]
 	end
 
 	def disconnect
-    	session["current_user"] = nil
+    	session[:current_user] = nil
   	end
 end
 
 get '/' do
-  	if current_user
-    	"Bonjour #{current_user}"
+  	if current_user!=nil
+    	#"Bonjour #{current_user}"
+		redirect "/#{current_user}"
   	else
-    	'<a href="/sauth/appli_cliente_1/register">Login</a>'
+    	erb :"sessions/register"
  	 end
 end
 
-get '/sauth/appli_cliente_1/register' do
-	msg_info = params[:info]
-    erb :"sessions/register", :locals => {:info => msg_info}
+get '/:current_user' do
+	@user = session[:current_user]
+	erb :"sessions/profil"
+	#"Bonjour #{current_user}"
 end
 
-post '/sauth/register' do
-	user = User.new
-	user.login = params[:login]
-	user.password = params[:password]
+get '/sauth/sessions/new' do
+	erb :"sessions/new"
+end
 
-	if user.login==nil or user.password==nil
-		redirect '/sauth/appli_cliente_1/register?info=Missing_Login_Or_Password'
+post '/sauth/sessions/new' do
+
+	#Cas où l'utilisateur est déjà connecté
+	if current_user
+		redirect '/'
 	else
-		if user.valid?
+		user = User.new
+		user.login = params[:login]
+		user.password = params[:password]
+		#Cas où tout se passe bien
+		if user.valid? && params[:password] == params[:password_confirmation]
 			user.save
-			redirect '/sauth/appli_cliente_1/new?info=Welcome_Now_You_Can_Connect'
+			session[:current_user] = user.login
+			redirect '/'
 		else
-			u = User.find_by_login(user.login)
-			if u!=nil
-         		redirect '/sauth/appli_cliente_1/register?info=Login_Used' 
-       		end
+			#Cas où un problème survient dans la saisie du mot de passe ou du login
+			@error = true
+			erb :"sessions/new"
 		end
-
-	end	
+	end
 end
 
-get '/sauth/appli_cliente_1/new' do
-	msg_info = params[:info]
-	erb :"sessions/new", :locals => {:info => msg_info}
+
+get '/sauth/sessions/register' do	
+	erb :"sessions/register"
 end
 
-post '/sauth/sessions' do
-	user = User.find_by_login(params[:login])
-	if user!=nil and user.password == params[:password]
-		redirect '/sauth/appli_cliente_1/protected'
+post '/sauth/sessions/register' do
+
+	#Cas où l'utilisateur est déjà connecté
+	if current_user
+		redirect '/'
 	else
-		if user!=nil and user.password != params[:password]
-			redirect '/sauth/appli_cliente_1/new?info=Pass_Not_Valid'
+		#Cas où tout se passe bien
+		user = User.find_by_login(params[:login])
+		if User.authenticate(params[:login], params[:password])
+			session[:current_user] = user.login
+			redirect '/'
 		else
-			if user == nil 
-				redirect '/sauth/appli_cliente_1/new?info=Login_Not_Exist'
+			@error_informations = false
+			@error_login_not_exists = false
+			if user!=nil
+				@error_informations = true
+				erb :"sessions/register"
+			else
+				@error_login_not_exists = true
+				erb :"sessions/register"
 			end
 		end
 	end
 end
 
+before '/appli_cliente_1/protected' do
+	redirect 'sauth/register?origine=/appli_cliente_1/protected' unless current_user
+end
 
-#before '/appli_cliente_1/protected' do
-#	redirect 'sauth/register?origine=/appli_cliente_1/protected' unless current_user
-#end
-
-#get '/appli_cliente_1/protected' do
-#	erb :"appli_cliente_1/protected", :locals => {:user => current_user}
-#end
+get '/appli_cliente_1/protected' do
+	erb :"appli_cliente_1/protected", :locals => {:user => current_user}
+end
 
 

@@ -1,5 +1,6 @@
 require_relative 'spec_helper'
 require 'user'
+require 'digest/sha1'
 
 describe User do
 
@@ -43,46 +44,63 @@ describe User do
 
 	describe "Check password" do
 
-		it "should include the password module" do
-   			User.included_modules.should include(Password)
-		end
-
 		it "should encrypt the password with sha1" do
-    		Digest::SHA1.should_receive(:hexdigest).with("foo").and_return("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33")
 			user = User.new
-    		user.password="foo"
+			user.login = "Patrick"
+			Digest::SHA1.should_receive(:hexdigest).with("pass").and_return("9d4e1e23bd5b727046a9e3b4b7db57bd8d6ee684")
+			user.password = "pass"
+			user.password.should == '9d4e1e23bd5b727046a9e3b4b7db57bd8d6ee684'
+
   		end
 
   		it "should store she sha1 digest" do
 			user = User.new
-    		user.password="foo"
-    		user.password.should == "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33"
+    		user.password="pass"
+    		user.password.should == Digest::SHA1.hexdigest("pass").inspect[1..40]
   		end
-
-		describe "user authentication"  do 
-
-    		it "should crypt the clear password given" do 
-				user = User.new
-      			Digest::SHA1.should_receive(:hexdigest).with("foo").and_return("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33")
-      			user.authenticate("foo")
-  			end
-		end
 
 		describe "authentication with password challenge" do
 	
 			it "should return valid authentication" do
-				user = User.new
-				user.login = "Patrick"
-				user.password = "foo"
-				user.authenticate("foo").should be_true
+				user = double(User)
+				user.stub(:login).and_return('Patrick')
+				user.stub(:password).and_return('9d4e1e23bd5b727046a9e3b4b7db57bd8d6ee684')
+				User.stub(:find_by_login).with('Patrick').and_return(user)
+				User.authenticate('Patrick', 'pass').should be_true
 			end
 
 			it "should return invalid authentication" do
-				user = User.new
-				user.login = "Patrick"
-				user.password = "foo"
-          		user.authenticate("bad pass").should be_false
+				user = double(User)
+				user.stub(:login).and_return('Patrick')
+				user.stub(:password).and_return('9d4e1e23bd5b727046a9e3b4b7db57bd8d6ee684')
+				User.stub(:find_by_login).with('Patrick').and_return(user)
+				User.authenticate('Patrick', 'bad pass').should be_false
 			end
 		end
+	end
+
+	describe "Check login" do
+	
+		it "should return true because the login format is good" do
+			user = double(User)
+			user.stub(:login).and_return('GoodLogin')
+			user.stub(:password).and_return('9d4e1e23bd5b727046a9e3b4b7db57bd8d6ee684')
+			User.stub(:find_by_login).with('Patrick').and_return(user)
+			User.authenticate('Patrick', 'pass').should be_true
+		end
+
+		it "should return false because login is short" do
+			user = User.new
+			user.login = "Bad"
+			user.password = "pass"
+			user.valid?.should be_false
+		end
+
+		it "should return false because login have special caracter" do
+			user = User.new
+			user.login = "Bad_-_-_-"
+			user.password = "pass"
+			user.valid?.should be_false
+		end		
 	end
 end
