@@ -2,4 +2,5 @@ Journal de bord des commits + travail à effectuer :
 
 6 mars 2012 : Création de la BDD
 7 mars 2012 : Création de sauth avec ces tests. Prochaine étape finir la classe sauth et ses tests.
+10 mars 2012 : Amélioration de sauth. Mise en place dans les templates des différents cas (login absent, password mauvais). Amélioration des spec de sauth et user. A continuer de faire : travailler sur sauth et sur les différents applis. 
 
