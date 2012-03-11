@@ -21,6 +21,12 @@ describe App do
 			app = App.new
 			app.valid?.should be_false
 		end
+
+		it "should not be valid because url is not valid" do
+			app = App.new
+			app.name = "AppAoun"
+			app.url = "url"
+		end
 	end
 
 	describe "Information not unique" do

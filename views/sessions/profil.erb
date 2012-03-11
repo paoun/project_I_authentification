@@ -5,6 +5,10 @@
 </head>
 <body>
 	<p>Bonjour <%= @user %> </p>
+
+	<% if @app %>
+		<p> Vous êtes administrateur de <%= @app_name %> d'URL <%= @app_url %> </p>
+	<% end %>
 	
 </body>
 </html>

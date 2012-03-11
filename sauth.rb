@@ -20,13 +20,19 @@ get '/' do
 		redirect "/#{current_user}"
   	else
     	erb :"sessions/register"
- 	 end
+ 	end
 end
 
 get '/:current_user' do
 	@user = session[:current_user]
+	admin = App.find_by_admin(@user)
+	#permet de lister les applications dont l'utilisateur est admin
+	if admin
+		@app = true
+		@app_name = admin.name
+		@app_url = admin.url
+	end
 	erb :"sessions/profil"
-	#"Bonjour #{current_user}"
 end
 
 get '/sauth/sessions/new' do
@@ -61,7 +67,6 @@ get '/sauth/sessions/register' do
 end
 
 post '/sauth/sessions/register' do
-
 	#Cas où l'utilisateur est déjà connecté
 	if current_user
 		redirect '/'
@@ -78,11 +83,56 @@ post '/sauth/sessions/register' do
 				@error_informations = true
 				erb :"sessions/register"
 			else
+				
 				@error_login_not_exists = true
 				erb :"sessions/register"
 			end
 		end
 	end
+end
+
+#Sauth concernant les applications
+get '/sauth/app/new' do
+	if current_user
+		erb :"app/new"
+	else
+		erb :"sessions/register"
+	end
+end
+
+post '/sauth/app/new' do
+	if current_user
+		app = App.new
+		app.name = params[:name]
+		app.url = params[:url]
+		app.admin = current_user
+	
+		if app.valid?
+			app.save
+			redirect '/'
+		else
+			@error_app = true
+			erb :"app/new"
+		end
+	else
+		redirect '/'
+	end
+end
+
+get '/?:app_name?/sessions/register/?' do
+
+	if current_user
+	
+	end
+
+end
+
+post '/?:app_name?/sessions/register/?' do
+end
+
+get '/sauth/sessions/disconnect' do
+	disconnect
+	redirect '/'
 end
 
 before '/appli_cliente_1/protected' do
