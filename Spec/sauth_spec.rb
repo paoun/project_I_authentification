@@ -80,6 +80,7 @@ describe "sauth" do
 
 			it "should user redirect in user page beacuse informations are good" do
 				post '/sauth/sessions/new', params={'login' => "Patrick", 'password' => "pass", 'password_confirmation' => "pass"}
+				last_response.status.should == 302
 				last_response.should be_redirect
 				follow_redirect!
 				last_request.path.should == '/'
@@ -107,10 +108,12 @@ describe "sauth" do
 		context "when the login exist in the database" do
 
 			it "should stay in inscription page because login exist" do
-				user = double(User)
-				user.stub(:login).and_return('TOTO')
-				user.stub(:password).and_return('password')
+				user = User.new
+				user.login = "TOTO"
+				user.password = "pass"
+				user.save
 				post '/sauth/sessions/new', params={'login' => "TOTO", 'password' => "mdp", 'password_confirmation' => "mdp"}
+				last_response.should be_ok
 				last_request.path.should == '/sauth/sessions/new'
 			end
 		end
@@ -118,14 +121,31 @@ describe "sauth" do
 
 	describe "The user wants to create an application" do
 
+		after (:each) do
+			User.all.each{|user| user.destroy}
+			App.all.each{|app| app.destroy}
+		end
+
 		it "should redirect the user in the profil page because the user is connected and the informations are good" do
-			user = double(User)
-			user.stub(:login).and_return('Patrick')
-			user.stub(:password).and_return('password')
-			#post '/sauth/sessions/register', params={'login' => "Patrick", 'password' => "password"}
-			post '/sauth/app/new', params={'name' => "Patrick_App", 'url' => "url_app"}
+			post '/sauth/sessions/new', params={'login' => "Patoche", 'password' => "password", 'password_confirmation' => "password"}
+			last_response.status.should == 302
+			post '/sauth/app/new', params={'name' => "Patrick_App", 'url' => "http://url_app"}
 			follow_redirect!
 			last_request.path.should == '/'	
+		end
+
+		it "should redirect the user in the creation of application page because the user is connected and the URL is not good" do
+			post '/sauth/sessions/new', params={'login' => "Patoche", 'password' => "password", 'password_confirmation' => "password"} 
+			last_response.status.should == 302
+			post '/sauth/app/new', params={'name' => "Patrick_App", 'url' => "url"}
+			last_response.status.should == 200
+			last_request.path.should == '/sauth/app/new'
+		end
+
+		it "should redirect the user in the main page because he is not connected" do
+			post '/sauth/app/new', params={'name' => "Patrick_App", 'url' => "url"}
+			follow_redirect!
+			last_request.path.should == '/'
 		end
 	
 	end

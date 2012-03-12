@@ -85,8 +85,8 @@ describe User do
 			user = double(User)
 			user.stub(:login).and_return('GoodLogin')
 			user.stub(:password).and_return('9d4e1e23bd5b727046a9e3b4b7db57bd8d6ee684')
-			User.stub(:find_by_login).with('Patrick').and_return(user)
-			User.authenticate('Patrick', 'pass').should be_true
+			User.stub(:find_by_login).with('GoodLogin').and_return(user)
+			User.authenticate('GoodLogin', 'pass').should be_true
 		end
 
 		it "should return false because login is short" do
