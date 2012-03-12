@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>User page</title>
+</head>
+<body>
+	<p>Bonjour <%= @user %> </p>
+
+	<% if @user == "admin" %>
+		<p> Vous avez tous les droits du service d'authentification </p>
+	<% else %>
+		<p> Vous n'avez aucun droits car vous n'êtes pas administrateur du service d'authentification </p>
+	<% end %>
+</body>
+</html>

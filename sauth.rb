@@ -92,7 +92,7 @@ post '/sauth/sessions/register' do
 end
 
 #Sauth concernant les applications
-get '/sauth/app/new' do
+get '/app/new' do
 	if current_user
 		erb :"app/new"
 	else
@@ -100,7 +100,7 @@ get '/sauth/app/new' do
 	end
 end
 
-post '/sauth/app/new' do
+post '/app/new' do
 	if current_user
 		app = App.new
 		app.name = params[:name]
@@ -119,15 +119,38 @@ post '/sauth/app/new' do
 	end
 end
 
-get '/?:app_name?/sessions/register/?' do
-
+get '/app/delete' do
 	if current_user
-	
+		app = App.find_by_id(params["app"])
+		if !app.nil?
+			uses = Use.where(:app_id => app.id)
+			uses.each do |u|
+					u.delete
+					u.save
+			end
+			app.delete
+			app.save
+			redirect '/' 
+		else
+			@error_not_admin = true
+			redirect '/'
+		end
+	else
+		redirect '/'
 	end
-
 end
 
-post '/?:app_name?/sessions/register/?' do
+get '/sauth/admin' do
+	if current_user
+		if current_user == "admin"
+			@user = current_user
+			erb :"/sauth/admin"
+		else
+			redirect '/'
+		end
+	else
+		redirect '/'
+	end
 end
 
 get '/sauth/sessions/disconnect' do
@@ -135,12 +158,5 @@ get '/sauth/sessions/disconnect' do
 	redirect '/'
 end
 
-before '/appli_cliente_1/protected' do
-	redirect 'sauth/register?origine=/appli_cliente_1/protected' unless current_user
-end
-
-get '/appli_cliente_1/protected' do
-	erb :"appli_cliente_1/protected", :locals => {:user => current_user}
-end
 
 
