@@ -121,20 +121,8 @@ end
 
 get '/app/delete' do
 	if current_user
-		app = App.find_by_id(params["app"])
-		if !app.nil?
-			uses = Use.where(:app_id => app.id)
-			uses.each do |u|
-					u.delete
-					u.save
-			end
-			app.delete
-			app.save
-			redirect '/' 
-		else
-			@error_not_admin = true
-			redirect '/'
-		end
+		App.delete_apps(params["app"])
+		redirect '/'
 	else
 		redirect '/'
 	end

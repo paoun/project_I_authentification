@@ -10,6 +10,11 @@ end
 
 describe "sauth" do
 
+	before (:each) do
+		User.all.each{|user| user.destroy}
+		App.all.each{|app| app.destroy}
+	end
+
 	describe "The user wants to acces at differents pages" do
 
 		it "status should return 200 if the user go to /" do
@@ -44,6 +49,7 @@ describe "sauth" do
 	describe "The user wants to connect" do
 	
 		before (:each) do
+			@params={'login' => "Patrick", 'password' => "pass"}
 			user = double(User)
 			user.stub(:login).and_return('Patrick')
 			user.stub(:password).and_return('9d4e1e23bd5b727046a9e3b4b7db57bd8d6ee684')
@@ -54,7 +60,7 @@ describe "sauth" do
 		context "when the user is registered (but not connected)" do
 
 			it "should user redirect in user page with good login and password" do
-				post '/sauth/sessions/register', params={'login' => "Patrick", 'password' => "pass"}	
+				post '/sauth/sessions/register', @params	
 				follow_redirect!
 				last_request.path.should == '/'
 				last_request.env['rack.session']['current_user'].should == 'Patrick'
@@ -64,7 +70,6 @@ describe "sauth" do
 
 			it "should user stay in login page because login is not valid" do
 				post '/sauth/sessions/register', params={'login' => "PatPat", 'password' => "pass"}
-				#last_response.body.should match %r{<form action="/sauth/register" method="post".*}
 				last_request.path.should == '/sauth/sessions/register'
 			end
 
@@ -126,29 +131,25 @@ describe "sauth" do
 	describe "The user wants to create an application" do
 
 		before (:each) do
-			User.all.each{|user| user.destroy}
-			App.all.each{|app| app.destroy}
+			post '/sauth/sessions/new', params={'login' => "Patrick", 'password' => "password", 'password_confirmation' => "password"}
 		end
 
 		it "should redirect the user in the profil page because the user is connected and the informations are good" do
-			post '/sauth/sessions/new', params={'login' => "Patoche", 'password' => "password", 'password_confirmation' => "password"}
-			last_response.status.should == 302
 			post '/app/new', params={'name' => "Patrick_App", 'url' => "http://url_app"}
-			last_request.env['rack.session']['current_user'].should == 'Patoche'
+			last_request.env['rack.session']['current_user'].should == 'Patrick'
 			follow_redirect!
 			last_request.path.should == '/'	
 		end
 
 		it "should redirect the user in the creation of application page because the user is connected and the URL is not good" do
-			post '/sauth/sessions/new', params={'login' => "Patoche", 'password' => "password", 'password_confirmation' => "password"} 
-			last_response.status.should == 302
 			post '/app/new', params={'name' => "Patrick_App", 'url' => "url"}
-			last_request.env['rack.session']['current_user'].should == 'Patoche'
+			last_request.env['rack.session']['current_user'].should == 'Patrick'
 			last_response.status.should == 200
 			last_request.path.should == '/app/new'
 		end
 
 		it "should redirect the user in the main page because he is not connected" do
+			get '/sauth/sessions/disconnect'
 			post '/app/new', params={'name' => "Patrick_App", 'url' => "url"}
 			follow_redirect!
 			last_request.path.should == '/'
@@ -159,15 +160,12 @@ describe "sauth" do
 	describe "The user wants to delete an application" do
 
 		before (:each) do
-			User.all.each{|user| user.destroy}
-			App.all.each{|app| app.destroy}
+			post '/sauth/sessions/new', params={'login' => "Patrick", 'password' => "password", 'password_confirmation' => "password"}
+			post '/app/new', params={'name' => "Patrick_App", 'url' => "http://app"}
 		end
 
 		it "should redirect the user in the profil page with the application delete" do
-			post '/sauth/sessions/new', params={'login' => "Patoche", 'password' => "password", 'password_confirmation' => "password"}
-			last_response.status.should == 302
-			post '/app/new', params={'name' => "Patrick_App", 'url' => "http://app"}
-			last_request.env['rack.session']['current_user'].should == 'Patoche'
+			last_request.env['rack.session']['current_user'].should == 'Patrick'
 			last_response.status.should == 302
 			app = App.find_by_name("Patrick_App")
 			app.nil?.should == false
@@ -179,21 +177,20 @@ describe "sauth" do
 		end
 
 		it "should redirect the user in the main page because he is not connected" do
+			get '/sauth/sessions/disconnect'
 			get "/app/delete?app=20"
 			follow_redirect!
 			last_request.path.should == '/'
 		end
 
 		it "should redirect the user in the profil page because the application not exist" do
-			post '/sauth/sessions/new', params={'login' => "Patoche", 'password' => "password", 'password_confirmation' => "password"}
-			last_request.env['rack.session']['current_user'].should == 'Patoche'
 			get "/app/delete?app=9999999"
 			follow_redirect!
 			last_request.path.should == '/'
 		end		
 	end
 
-	describe "The user wants to delete other users" do
+	describe "The super user wants to delete other users" do
 
 		it "should redirect in admin page because the user login is admin" do
 			post '/sauth/sessions/new', params={'login' => "admin", 'password' => "password", 'password_confirmation' => "password"}
@@ -218,6 +215,4 @@ describe "sauth" do
 			last_request.path.should == '/'
 		end
 	end
-	
-	User.all.each{|user| user.destroy}	
 end
