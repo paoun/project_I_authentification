@@ -16,8 +16,11 @@ end
 
 get '/' do
   	if current_user!=nil
-    	#"Bonjour #{current_user}"
-		redirect "/#{current_user}"
+		if current_user == "admin"
+			redirect '/sauth/admin'
+		else
+			redirect "/#{current_user}"
+		end
   	else
     	erb :"sessions/register"
  	end
@@ -83,7 +86,6 @@ post '/sauth/sessions/register' do
 				@error_informations = true
 				erb :"sessions/register"
 			else
-				
 				@error_login_not_exists = true
 				erb :"sessions/register"
 			end
@@ -121,7 +123,7 @@ end
 
 get '/app/delete' do
 	if current_user
-		App.delete_apps(params["app"])
+		App.delete_apps(params["app"],current_user)
 		redirect '/'
 	else
 		redirect '/'
@@ -132,6 +134,7 @@ get '/sauth/admin' do
 	if current_user
 		if current_user == "admin"
 			@user = current_user
+			@list_user = User.all
 			erb :"/sauth/admin"
 		else
 			redirect '/'
@@ -139,6 +142,16 @@ get '/sauth/admin' do
 	else
 		redirect '/'
 	end
+end
+
+get '/sauth/users/delete' do
+	if session["current_user"] == "admin"
+		User.delete_users(params["user"])
+    	redirect "/sauth/admin"
+    else
+    	@error_admin = true
+    	redirect "/"
+  	end
 end
 
 get '/sauth/sessions/disconnect' do

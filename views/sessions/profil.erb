@@ -16,7 +16,7 @@
 		<p>Voici la liste d'applications dont vous êtes l'administrateur</p>
 		<ul>
 			<% app.each do |a| %>
-				<li><%=a.name%> URL -> <%=a.url%> - <a href="/app/delete?app=<%=a.id%>"">Supprimer</a> </li>
+				<li><%=a.name%> URL -> <%=a.url%> - <a href="/app/delete?app=<%=a.id%>">Supprimer</a> </li>
 			<% end %>
 		</ul>
 	</div>

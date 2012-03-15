@@ -1,15 +1,34 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>User page</title>
+  <title>Page d'administration</title>
 </head>
 <body>
 	<p>Bonjour <%= @user %> </p>
 
-	<% if @user == "admin" %>
+	<% if !@error_admin %>
 		<p> Vous avez tous les droits du service d'authentification </p>
+
+		<div class="list_user">
+			 <% user = User.all %>
+			 <% if user.length > 1 %>
+             	<p>Voici les utilisateurs du service d'authentification :</p>
+            	<ul>
+              		<% @list_user.each do |u| %> 
+                		<%if u.login != "admin"%> 
+                  			<li><%=u.login%> - <a href="/sauth/users/delete?user=<%=u.id%>">Supprimer cet utilisateur</a> </li>
+                		<% end %>              
+              		<% end %>
+            	</ul>
+			<% else %>
+				<p> Aucun utilisateurs ne sont enregistrés sur votre service d'authentification <p>
+			<% end %>
 	<% else %>
 		<p> Vous n'avez aucun droits car vous n'êtes pas administrateur du service d'authentification </p>
 	<% end %>
+
+<a href="/app/new">Créer une nouvelle application</a><br/>
+<a href="/sauth/sessions/disconnect">Se déconnecter</a>
+
 </body>
 </html>

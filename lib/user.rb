@@ -26,4 +26,19 @@ class User < ActiveRecord::Base
 		user = User.find_by_login(login)
 		!user.nil? && user.password == Digest::SHA1.hexdigest(password).inspect[1..40]
   	end 
+
+	def self.delete_users(user_id)
+		user = User.find_by_id(user_id)
+		if !user.nil?	
+    		user.delete
+			user.save
+			uses = Use.where(:user_id => user.id)
+			uses.each do |u|
+					u.delete
+					u.save
+			end
+   	 	else
+    		@error = true
+		end		
+	end
 end

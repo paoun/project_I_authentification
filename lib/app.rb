@@ -18,16 +18,20 @@ class App < ActiveRecord::Base
 		App.find_all_by_user_id(User.find_by_login(username))
 	end
 
-	def self.delete_apps(app_id)
+	def self.delete_apps(app_id,user)
 		app = App.find_by_id(app_id)
 		if !app.nil?
-			uses = Use.where(:app_id => app.id)
-			uses.each do |u|
-					u.delete
-					u.save
-			end
-			app.delete
-			app.save
+			if user == app.admin
+				uses = Use.where(:app_id => app.id)
+				uses.each do |u|
+						u.delete
+						u.save
+				end
+				app.delete
+				app.save
+			else
+				@error_not_admin = true
+			end				
 		else
 			@error_not_admin = true
 		end
