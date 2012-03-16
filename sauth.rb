@@ -22,7 +22,7 @@ get '/' do
 			redirect "/#{current_user}"
 		end
   	else
-    	erb :"sessions/register"
+    	erb :"sessions/new"
  	end
 end
 
@@ -35,14 +35,14 @@ get '/:current_user' do
 		@app_name = admin.name
 		@app_url = admin.url
 	end
-	erb :"sessions/profil"
+	erb :"users/profil"
 end
 
-get '/sauth/sessions/new' do
-	erb :"sessions/new"
+get '/users/new' do
+	erb :"users/new"
 end
 
-post '/sauth/sessions/new' do
+post '/users' do
 
 	#Cas où l'utilisateur est déjà connecté
 	if current_user
@@ -59,17 +59,17 @@ post '/sauth/sessions/new' do
 		else
 			#Cas où un problème survient dans la saisie du mot de passe ou du login
 			@error = true
-			erb :"sessions/new"
+			erb :"users/new"
 		end
 	end
 end
 
 
-get '/sauth/sessions/register' do	
-	erb :"sessions/register"
+get '/sessions/new' do	
+	erb :"sessions/new"
 end
 
-post '/sauth/sessions/register' do
+post '/sessions' do
 	#Cas où l'utilisateur est déjà connecté
 	if current_user
 		redirect '/'
@@ -84,10 +84,10 @@ post '/sauth/sessions/register' do
 			@error_login_not_exists = false
 			if user!=nil
 				@error_informations = true
-				erb :"sessions/register"
+				erb :"sessions/new"
 			else
 				@error_login_not_exists = true
-				erb :"sessions/register"
+				erb :"sessions/new"
 			end
 		end
 	end
@@ -98,11 +98,11 @@ get '/app/new' do
 	if current_user
 		erb :"app/new"
 	else
-		erb :"sessions/register"
+		erb :"sessions/new"
 	end
 end
 
-post '/app/new' do
+post '/app' do
 	if current_user
 		app = App.new
 		app.name = params[:name]
@@ -154,7 +154,7 @@ get '/sauth/users/delete' do
   	end
 end
 
-get '/sauth/sessions/disconnect' do
+get '/sessions/disconnect' do
 	disconnect
 	redirect '/'
 end

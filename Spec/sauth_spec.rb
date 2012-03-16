@@ -23,30 +23,28 @@ describe "sauth" do
 		end
 
 		it "status should return 200 if the user go to /:current_user" do
-			get '/:current_user'
+			get '/users/:current_user'
 			last_response.status.should == 200
 		end
 
 		it "status should return 200 if the user go to /sauth/sessions/new" do
-			get '/sauth/sessions/new'
-			last_response.body.should match %r{<form action="/sauth/sessions/new" method="post".*}
+			get '/sessions/new'
 			last_response.status.should == 200
 		end
 
 		it "satus should return 200 if the user go to /sauth/sessions/register" do
-			get '/sauth/sessions/register'
-			last_response.body.should match %r{<form action="/sauth/sessions/register" method="post".*}
+			get '/users/new'
 			last_response.status.should == 200
 		end
 
-		it "status should return 200 if the user go to /sauth/app/new" do
+		it "status should return 200 if the user go to /app/new" do
 			get '/app/new'
 			last_response.status.should == 200
 		end
 
 	end
 
-	describe "post /sauth/sessions/register" do
+	describe "post /sessions" do
 	
 		before (:each) do
 			@params_user={'login' => "Patrick", 'password' => "pass"}
@@ -58,40 +56,39 @@ describe "sauth" do
 
 		it "should authenticate with success" do
 			User.should_receive(:find_by_login).at_least(1).with('Patrick').and_return(@user)
-			post '/sauth/sessions/register', @params_user	
+			post '/sessions', @params_user	
 			follow_redirect!
 			last_request.path.should == '/'
-			last_request.env['rack.session']['current_user'].should == 'Patrick'
 		end
 
 		it "should not authenticate with success" do
-			post '/sauth/sessions/register', @params_user
+			post '/sessions', @params_user
 			last_response.should be_ok
-			last_request.path.should == '/sauth/sessions/register'
+			last_request.path.should == '/sessions'
 		end
 
 		it "should not authenticate because password is not valid" do
 			User.should_receive(:find_by_login).at_least(1).with('Patrick').and_return(@user)
-			post '/sauth/sessions/register', params={'login' => "Patrick", 'password' => "mdp"}
+			post '/sessions', params={'login' => "Patrick", 'password' => "mdp"}
 			last_response.should be_ok
-			last_request.path.should == '/sauth/sessions/register'
+			last_request.path.should == '/sessions'
 		end
 
 		it "should not authenticate because login is not exist" do
-			post '/sauth/sessions/register', @params_user
+			post '/sessions', @params_user
 			last_response.should be_ok
-			last_request.path.should == '/sauth/sessions/register'
+			last_request.path.should == '/sessions'
 		end	
 	end
 
-	describe "post /sauth/sessions/new" do
+	describe "post /users" do
 
 		before (:each) do
 			@params_user={'login' => "Patrick", 'password' => "pass", 'password_confirmation' => "pass"}
 		end	
 
 		it "should create with success" do
-				post '/sauth/sessions/new', @params_user
+				post '/users', @params_user
 				last_request.env['rack.session']['current_user'].should == 'Patrick'
 				last_response.status.should == 302
 				last_response.should be_redirect
@@ -100,31 +97,31 @@ describe "sauth" do
 		end
 
 		it "should user stay in inscription page because login is not present" do
-			post '/sauth/sessions/new', params={'password' => "pass", 'password_confirmation' => "pass"}
+			post '/users', params={'password' => "pass", 'password_confirmation' => "pass"}
 			last_response.should be_ok
-			last_request.path.should == '/sauth/sessions/new'
+			last_request.path.should == '/users'
 		end
 
 		it "should user stay in inscription page because login is not good" do
 			@params_user['login'] = "_-Pat-_"
-			post '/sauth/sessions/new', @params_user
+			post '/users', @params_user
 			last_response.should be_ok
-			last_request.path.should == '/sauth/sessions/new'
+			last_request.path.should == '/users'
 		end
 
 		it "should user stay in inscription page because password is different of password_confirmation" do
 			@params_user['password_confirmation'] = "bad_pass"
-			post '/sauth/sessions/new', @params_user
+			post '/users', @params_user
 			last_response.should be_ok
-			last_request.path.should == '/sauth/sessions/new'
+			last_request.path.should == '/users'
 		end
 
 		it "should stay in inscription page because login exist" do
-			post '/sauth/sessions/new', @params_user
-			get '/sauth/sessions/disconnect'
-			post '/sauth/sessions/new', params={'login' => "Patrick", 'password' => "mdp", 'password_confirmation' => "mdp"}
+			post '/users', @params_user
+			get '/sessions/disconnect'
+			post '/users', params={'login' => "Patrick", 'password' => "mdp", 'password_confirmation' => "mdp"}
 			last_response.should be_ok
-			last_request.path.should == '/sauth/sessions/new'
+			last_request.path.should == '/users'
 		end
 	end
 
@@ -141,24 +138,24 @@ describe "sauth" do
 
 		it "should create with success" do
 			User.should_receive(:find_by_login).at_least(1).with('Patrick').and_return(@user)
-			post '/sauth/sessions/register', @params_user
-			post '/app/new', @params_app
+			post '/sessions', @params_user
+			post '/app', @params_app
 			follow_redirect!
 			last_request.path.should == '/'	
 		end
 
 		it "should not create with success (bad url)" do
 			User.should_receive(:find_by_login).at_least(1).with('Patrick').and_return(@user)
-			post '/sauth/sessions/register', @params_user
+			post '/sessions', @params_user
 			@params_app['url'] = "bad_url"
-			post '/app/new', @params_app
+			post '/app', @params_app
 			last_response.status.should == 200
-			last_request.path.should == '/app/new'
+			last_request.path.should == '/app'
 		end
 
 		it "should not create with success (user is not connected)" do
-			get '/sauth/sessions/disconnect'
-			post '/app/new', @params_app
+			get '/sessions/disconnect'
+			post '/app', @params_app
 			follow_redirect!
 			last_request.path.should == '/'
 		end
@@ -168,8 +165,8 @@ describe "sauth" do
 	describe "get /app/delete" do
 
 		before (:each) do
-			post '/sauth/sessions/new', params={'login' => "Patrick", 'password' => "password", 'password_confirmation' => "password"}
-			post '/app/new', params={'name' => "Patrick_App", 'url' => "http://app"}
+			post '/users', params={'login' => "Patrick", 'password' => "password", 'password_confirmation' => "password"}
+			post '/app', params={'name' => "Patrick_App", 'url' => "http://app"}
 			app = App.find_by_name("Patrick_App")
 			@app_id = app.id
 		end
@@ -185,7 +182,7 @@ describe "sauth" do
 		end
 
 		it "should not delete with success (not connected)" do	
-			get '/sauth/sessions/disconnect'
+			get '/sessions/disconnect'
 			app = App.find_by_name("Patrick_App")
 			app.nil?.should == false
 			get "/app/delete?app=#{app.id}"
@@ -202,8 +199,8 @@ describe "sauth" do
 		end	
 
 		it "should not delete with success (not admin)" do
-			get '/sauth/sessions/disconnect'
-			post '/sauth/sessions/new', params={'login' => "NewLogin", 'password' => "password", 'password_confirmation' => "password"}
+			get '/sessions/disconnect'
+			post '/users', params={'login' => "NewLogin", 'password' => "password", 'password_confirmation' => "password"}
 			app = App.find_by_name("Patrick_App")
 			app.nil?.should == false
 			get "/app/delete?app=#{app.id}"
@@ -219,20 +216,19 @@ describe "sauth" do
 
 		before (:each) do
 			@params_admin = {'login' => "admin", 'password' => "password", 'password_confirmation' => "password"}
-			post '/sauth/sessions/new', @params_admin
+			post '/users', @params_admin
 		end
 
 		it "should redirect in admin page with success (login = admin)" do
-			post '/sauth/sessions/new', @params_admin
 			last_request.env['rack.session']['current_user'].should == 'admin'
 			get '/sauth/admin'
 			last_request.path.should == '/sauth/admin'
 		end
 
 		it "should redirect in the profil page (not admin page, login /= admin)" do
-			get '/sauth/sessions/disconnect'
+			get '/sessions/disconnect'
 			@params_admin['login'] = "Patrick"
-			post '/sauth/sessions/new', @params_admin
+			post '/users', @params_admin
 			last_request.env['rack.session']['current_user'].should == 'Patrick'
 			get '/sauth/admin'
 			follow_redirect!
@@ -240,7 +236,7 @@ describe "sauth" do
 		end
 
 		it "should redirect in the main (not connected)" do
-			get '/sauth/sessions/disconnect'
+			get '/sessions/disconnect'
 			get '/sauth/admin'
 			follow_redirect!
 			last_request.path.should == '/'
@@ -252,9 +248,9 @@ describe "sauth" do
 		before (:each) do
 			@params_admin = {'login' => "admin", 'password' => "password", 'password_confirmation' => "password"}
 			@params_user = {'login' => "login", 'password' => "password", 'password_confirmation' => "password"}
-			post '/sauth/sessions/new', @params_user
-			get '/sauth/sessions/disconnect'
-			post '/sauth/sessions/new', @params_admin
+			post '/users', @params_user
+			get '/sessions/disconnect'
+			post '/users', @params_admin
 			@user = User.find_by_login("login")
 			@user_id = @user.id
 		end
@@ -269,8 +265,8 @@ describe "sauth" do
 		end
 
 		it "should not delete the user with success (not admin)" do
-			get '/sauth/sessions/disconnect'
-			post '/sauth/sessions/new', {'login' => "Patrick", 'password' => "password", 'password_confirmation' => "password"}
+			get '/sessions/disconnect'
+			post '/users', {'login' => "Patrick", 'password' => "password", 'password_confirmation' => "password"}
 			@user.nil?.should == false
 			get "/sauth/users/delete?user=#{@user_id}"
 			follow_redirect!
