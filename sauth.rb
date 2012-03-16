@@ -1,7 +1,7 @@
 #encoding: UTF-8
 require 'sinatra'
 $: << File.dirname(__FILE__)
-require 'Spec/spec_helper'
+require 'spec/spec_helper'
 enable :sessions
 
 helpers do
@@ -11,6 +11,7 @@ helpers do
 
 	def disconnect
     	session[:current_user] = nil
+		response.set_cookie("sauth", {:value => '', :expires => Time.at(0), :path => '/'})
   	end
 end
 
@@ -22,14 +23,19 @@ get '/' do
 			redirect "/#{current_user}"
 		end
   	else
-    	erb :"sessions/new"
+		if request.cookies["sauth"]!=nil
+			user = User.find_by_login(request.cookies["sauth"])
+			session[:current_user]=user.login
+			redirect "/#{current_user}"
+		else
+    		erb :"sessions/new"
+		end
  	end
 end
 
 get '/:current_user' do
 	@user = session[:current_user]
 	admin = App.find_by_admin(@user)
-	#permet de lister les applications dont l'utilisateur est admin
 	if admin
 		@app = true
 		@app_name = admin.name
@@ -43,21 +49,18 @@ get '/users/new' do
 end
 
 post '/users' do
-
-	#Cas où l'utilisateur est déjà connecté
 	if current_user
 		redirect '/'
 	else
 		user = User.new
 		user.login = params[:login]
 		user.password = params[:password]
-		#Cas où tout se passe bien
 		if user.valid? && params[:password] == params[:password_confirmation]
 			user.save
 			session[:current_user] = user.login
+			response.set_cookie("sauth", {:value => user.login, :expires => Time.parse(Date.today.next_day(7).to_s), :path => '/'})
 			redirect '/'
 		else
-			#Cas où un problème survient dans la saisie du mot de passe ou du login
 			@error = true
 			erb :"users/new"
 		end
@@ -70,14 +73,13 @@ get '/sessions/new' do
 end
 
 post '/sessions' do
-	#Cas où l'utilisateur est déjà connecté
 	if current_user
 		redirect '/'
 	else
-		#Cas où tout se passe bien
 		user = User.find_by_login(params[:login])
 		if User.authenticate(params[:login], params[:password])
 			session[:current_user] = user.login
+			response.set_cookie("sauth", {:value => user.login, :expires => Time.parse(Date.today.next_day(7).to_s), :path => '/'})
 			redirect '/'
 		else
 			@error_informations = false
@@ -93,7 +95,6 @@ post '/sessions' do
 	end
 end
 
-#Sauth concernant les applications
 get '/app/new' do
 	if current_user
 		erb :"app/new"
@@ -152,6 +153,12 @@ get '/sauth/users/delete' do
     	@error_admin = true
     	redirect "/"
   	end
+end
+
+get '/:app/sessions/new' do
+end
+
+post '/:app/sessions' do
 end
 
 get '/sessions/disconnect' do
