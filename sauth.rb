@@ -85,11 +85,15 @@ get '/?:app_name?/sessions/new/?' do
 			redirect '/'
 		else
 			app = App.find_by_name(params['app'])
-			use = Use.new
-			use.app = app
-			use.uer = current_user
-			use.save
-			redirect to(app.url+params['origin']+'?login='+current_user)
+			if app.nil?
+				redirect '/'
+			else
+				use = Use.new
+				use.app = app
+				use.uer = current_user
+				use.save
+				redirect to(app.url+params['origin']+'?login='+current_user)
+			end
 		end
 	else
 		erb :"sessions/new"
@@ -98,12 +102,38 @@ end
 
 post '/?:app_name?/sessions/?' do
 	if connected?
-		redirect '/'
+		if params['app_name']==nil
+			redirect '/'
+		else
+			app = App.find_by_name(params['app'])
+			if app.nil?
+				redirect '/'
+			else
+				use = Use.new
+				use.app = app
+				use.uer = current_user
+				use.save
+				redirect to(app.url+params['origin']+'?login='+current_user)
+			end
+		end
 	else
 		user = User.find_by_login(params[:login])
 		if User.authenticate(params[:login], params[:password])
 			connect(user)
-			redirect '/'
+			if params['app_name']==nil
+				redirect '/'
+			else
+				app = App.find_by_name(params['app'])
+				if app.nil?
+					redirect '/'
+				else
+					use = Use.new
+					use.app = app
+					use.uer = current_user
+					use.save
+					redirect to(app.url+params['origin']+'?login='+current_user)
+				end
+			end
 		else
 			@error_informations = false
 			@error_login_not_exists = false
