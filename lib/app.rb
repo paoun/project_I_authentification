@@ -14,6 +14,10 @@ class App < ActiveRecord::Base
 	validates :url, :uniqueness => true
 	validates :url, :format => { :with => /^https?:\/\/[a-z0-9._\/-]+/i, :on => :create }
 
+	def self.exist?(app_name)
+		!App.find_by_name(app_name).nil?
+	end
+
 	def self.get_apps(user_name) 
 		App.find_all_by_user_id(User.find_by_login(username))
 	end

@@ -13,17 +13,17 @@
 	<% app = App.where(:admin => @user)
 	   if !app.empty? %>
 		<div class="applications">
-		<p>Voici la liste d'applications dont vous êtes l'administrateur</p>
-		<ul>
-			<% app.each do |a| %>
-				<li><%=a.name%> URL -> <%=a.url%> - <a href="/app/delete?app=<%=a.id%>">Supprimer</a> </li>
-			<% end %>
-		</ul>
-	</div>
+			<p>Voici la liste d'applications dont vous êtes l'administrateur</p>
+			<ul>
+				<% app.each do |a| %>
+					<li><%=a.name%> URL -> <%=a.url%> - <a href="/app/delete?app=<%=a.id%>">Supprimer</a> </li>
+				<% end %>
+			</ul>
+		</div>
 
-<%else%>
-	<p>Vous êtes administrateur d'aucune application</p>
-<%end%>
+	<%else%>
+		<p>Vous êtes administrateur d'aucune application</p>
+	<%end%>
 
 <a href="/app/new">Créer une nouvelle application</a><br/>
 <a href="/sessions/disconnect">Se déconnecter</a>

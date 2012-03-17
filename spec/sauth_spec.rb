@@ -10,7 +10,7 @@ end
 
 describe "sauth" do
 
-	before (:each) do
+	after (:each) do
 		User.all.each{|user| user.destroy}
 		App.all.each{|app| app.destroy}
 	end
@@ -23,7 +23,7 @@ describe "sauth" do
 		end
 
 		it "status should return 200 if the user go to /:current_user" do
-			get '/users/:current_user'
+			get '/:current_user'
 			last_response.status.should == 200
 		end
 

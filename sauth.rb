@@ -13,24 +13,36 @@ helpers do
     	session[:current_user] = nil
 		response.set_cookie("sauth", {:value => '', :expires => Time.at(0), :path => '/'})
   	end
+
+	def connect(user)
+		session[:current_user] = user.login
+		response.set_cookie("sauth", {:value => user.login, :expires => Time.parse(Date.today.next_day(7).to_s), :path => '/'})
+	end
+
+	def connected?
+		if session[:current_user]==nil && request.cookies["sauth"]!=nil
+			user = User.find_by_login(request.cookies["sauth"])
+			if user != nil
+				connect(user)
+			else
+				disconnect
+			end
+		end
+		!session[:current_user].nil?
+	end
+	
 end
 
 get '/' do
-  	if current_user!=nil
-		if current_user == "admin"
+	if connected?
+		if session[:current_user] == "admin"
 			redirect '/sauth/admin'
 		else
 			redirect "/#{current_user}"
 		end
-  	else
-		if request.cookies["sauth"]!=nil
-			user = User.find_by_login(request.cookies["sauth"])
-			session[:current_user]=user.login
-			redirect "/#{current_user}"
-		else
-    		erb :"sessions/new"
-		end
- 	end
+	else
+		erb :"sessions/new"
+	end
 end
 
 get '/:current_user' do
@@ -49,7 +61,7 @@ get '/users/new' do
 end
 
 post '/users' do
-	if current_user
+	if connected?
 		redirect '/'
 	else
 		user = User.new
@@ -57,8 +69,7 @@ post '/users' do
 		user.password = params[:password]
 		if user.valid? && params[:password] == params[:password_confirmation]
 			user.save
-			session[:current_user] = user.login
-			response.set_cookie("sauth", {:value => user.login, :expires => Time.parse(Date.today.next_day(7).to_s), :path => '/'})
+			connect(user)
 			redirect '/'
 		else
 			@error = true
@@ -69,17 +80,20 @@ end
 
 
 get '/sessions/new' do	
-	erb :"sessions/new"
+	if connected?
+		redirect '/'
+	else
+		erb :"sessions/new"
+	end
 end
 
 post '/sessions' do
-	if current_user
+	if connected?
 		redirect '/'
 	else
 		user = User.find_by_login(params[:login])
 		if User.authenticate(params[:login], params[:password])
-			session[:current_user] = user.login
-			response.set_cookie("sauth", {:value => user.login, :expires => Time.parse(Date.today.next_day(7).to_s), :path => '/'})
+			connect(user)
 			redirect '/'
 		else
 			@error_informations = false
@@ -96,7 +110,7 @@ post '/sessions' do
 end
 
 get '/app/new' do
-	if current_user
+	if connected?
 		erb :"app/new"
 	else
 		erb :"sessions/new"
@@ -104,7 +118,7 @@ get '/app/new' do
 end
 
 post '/app' do
-	if current_user
+	if connected?
 		app = App.new
 		app.name = params[:name]
 		app.url = params[:url]
@@ -123,7 +137,7 @@ post '/app' do
 end
 
 get '/app/delete' do
-	if current_user
+	if connected?
 		App.delete_apps(params["app"],current_user)
 		redirect '/'
 	else
@@ -132,7 +146,7 @@ get '/app/delete' do
 end
 
 get '/sauth/admin' do
-	if current_user
+	if connected?
 		if current_user == "admin"
 			@user = current_user
 			@list_user = User.all
@@ -146,16 +160,33 @@ get '/sauth/admin' do
 end
 
 get '/sauth/users/delete' do
-	if session["current_user"] == "admin"
-		User.delete_users(params["user"])
-    	redirect "/sauth/admin"
-    else
-    	@error_admin = true
-    	redirect "/"
-  	end
+	if connected?
+		if current_user == "admin"
+			User.delete_users(params["user"])
+			redirect "/sauth/admin"
+		else
+			@error_admin = true
+			redirect "/"
+	  	end
+	else
+		@error_admin = true
+		redirect "/"
+	end
 end
 
 get '/:app/sessions/new' do
+	if params['app'].nil==false && !App.exist?(params['app'])
+		@error_app = true
+		redirect '/'
+	elsif connected?
+		app = App.find_by_name(params['app'])
+		redirect to(app.url+params['origin']+'?login='+current_user)
+		use = Use.new
+		use.app = app
+		use.uer = current_user
+		use.save
+	end
+		
 end
 
 post '/:app/sessions' do
