@@ -79,15 +79,24 @@ post '/users' do
 end
 
 
-get '/sessions/new' do	
+get '/?:app_name?/sessions/new/?' do	
 	if connected?
-		redirect '/'
+		if params['app_name']==nil
+			redirect '/'
+		else
+			app = App.find_by_name(params['app'])
+			use = Use.new
+			use.app = app
+			use.uer = current_user
+			use.save
+			redirect to(app.url+params['origin']+'?login='+current_user)
+		end
 	else
 		erb :"sessions/new"
 	end
 end
 
-post '/sessions' do
+post '/?:app_name?/sessions/?' do
 	if connected?
 		redirect '/'
 	else
@@ -172,24 +181,6 @@ get '/sauth/users/delete' do
 		@error_admin = true
 		redirect "/"
 	end
-end
-
-get '/:app/sessions/new' do
-	if params['app'].nil==false && !App.exist?(params['app'])
-		@error_app = true
-		redirect '/'
-	elsif connected?
-		app = App.find_by_name(params['app'])
-		redirect to(app.url+params['origin']+'?login='+current_user)
-		use = Use.new
-		use.app = app
-		use.uer = current_user
-		use.save
-	end
-		
-end
-
-post '/:app/sessions' do
 end
 
 get '/sessions/disconnect' do
