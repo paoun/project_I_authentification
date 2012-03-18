@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Création d'une nouvelle application</title>
+</head>
+<body>
+
+<% if @error_app.nil? %>
+	<p class="not_error">Veuillez remplir le formulaire ci dessous. Tous les champs sont obligatoires.</p>
+<% else %>
+	<p class="error">Une erreur est survenue. Veuillez remplir de nouveau le formulaire. </p>
+<% end %>
+
+<h1>Formulaire de création</h1>
+
+<form action="/app" method="post">
+  <div class="field">
+    <label for="app_name">Nom de l'application</label> <br />
+
+    <input id="app_name" name="name" size="40" type="text" />
+	<p> Le nom de l'application doit contenir entre 4 et 40 caractères sans aucun caractères spéciaux </p>
+  </div>
+  <div class="field">
+    <label for="app_url">URL de l'application</label><br />
+    <input id="app_url" name="url" size="30" type="text" />
+  </div>
+  <div class="actions">
+    <input name="commit" type="submit" value="Créer la nouvelle application" />
+
+  </div>
+</form>
+
+</body>
+</html>
+
