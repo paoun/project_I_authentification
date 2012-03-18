@@ -62,22 +62,13 @@ end
 
 post '/users' do
 	if connected?
-
 		if params['nameapp']==nil
 			redirect '/'
 		else
 			app = App.find_by_name(params['nameapp'])
-			if app.nil?
-				redirect '/'
-			else
-				user = User.find_by_login(current_user)
-				use = Use.new
-				use.app = app
-				use.user = user
-				use.save
-				url=app.url+params['origin']+'?login='+current_user
-				redirect url
-			end
+			user = session[:current_user]
+			redirect_app = App.redirect(app,params['origin'],user)
+			redirect redirect_app
 		end
 	else
 		user = User.new
@@ -90,17 +81,8 @@ post '/users' do
 				redirect '/'
 			else
 				app = App.find_by_name(params['nameapp'])
-				if app.nil?
-					redirect '/'
-				else
-					user = User.find_by_login(current_user)
-					use = Use.new
-					use.app = app
-					use.user = user
-					use.save
-					url=app.url+params['origin']+'?login='+current_user
-					redirect url
-				end
+				redirect_app = App.redirect(app,params['origin'],user)
+				redirect redirect_app
 			end
 		else
 			@error = true
@@ -143,8 +125,8 @@ get '/:app_name/sessions/new' do
 	if connected?
 		app = App.find_by_name(params['app_name'])
 		user = User.find_by_login(session[:current_user])
-		redirect_url = App.redirect(app,params['origin'],user)
-		redirect redirect_url
+		redirect_app = App.redirect(app,params['origin'],user)
+		redirect redirect_app
 	else
 		erb :"sessions/new"
 	end
@@ -154,15 +136,15 @@ post '/:app_name/sessions' do
 	if connected?
 		app = App.find_by_name(params['app_name'])
 		user = User.find_by_login(current_user)
-		redirect_url = App.redirect(app,params['origin'],user)
-		redirect redirect_url
+		redirect_app = App.redirect(app,params['origin'],user)
+		redirect redirect_app
 	else
 		user = User.find_by_login(params[:login])
 		if User.authenticate(params[:login], params[:password])
 			connect(user)
 			app = App.find_by_name(params['app_name'])
-			redirect_url = App.redirect(app,params['origin'],user)
-			redirect redirect_url
+			redirect_app = App.redirect(app,params['origin'],user)
+			redirect redirect_app
 		else
 			@error_informations = false
 			@error_login_not_exists = false

@@ -1,7 +1,7 @@
 $: << File.dirname(__FILE__)
 
 require 'sinatra'
-set :port, 9191
+set :port, 1990
 helpers do 
   def current_user
     session["current_user"]
