@@ -47,46 +47,98 @@ describe "sauth" do
 
 	describe "post /users" do
 
-		before (:each) do
-			@params_user={'login' => "Patrick", 'password' => "pass", 'password_confirmation' => "pass"}
-		end	
+		context "there is not an origin" do
 
-		it "should create with success" do
-			post '/users', @params_user
-			last_request.env['rack.session']['current_user'].should == 'Patrick'
-			last_response.status.should == 302
-			last_response.should be_redirect
-			follow_redirect!
-			last_request.path.should == '/'
+			before (:each) do
+				@params_user={'login' => "Patrick", 'password' => "pass", 'password_confirmation' => "pass"}
+			end	
+
+			it "should create with success" do
+				post '/users', @params_user
+				last_request.env['rack.session']['current_user'].should == 'Patrick'
+				last_response.status.should == 302
+				last_response.should be_redirect
+				follow_redirect!
+				last_request.path.should == '/'
+			end
+
+			it "should user stay in inscription page because login is not present" do
+				@params_user[:login]=""
+				post '/users', @params_user 
+				last_response.should be_ok
+				last_request.path.should == '/users'
+			end
+
+			it "should user stay in inscription page because login is not good" do
+				@params_user['login'] = "_-Pat-_"
+				post '/users', @params_user
+				last_response.should be_ok
+				last_request.path.should == '/users'
+			end
+
+			it "should user stay in inscription page because password is different of password_confirmation" do
+				@params_user['password_confirmation'] = "bad_pass"
+				post '/users', @params_user
+				last_response.should be_ok
+				last_request.path.should == '/users'
+			end
+
+			it "should stay in inscription page because login exist" do
+				post '/users', @params_user
+				get '/sessions/disconnect'
+				post '/users', params={'login' => "Patrick", 'password' => "mdp", 'password_confirmation' => "mdp"}
+				last_response.should be_ok
+				last_request.path.should == '/users'
+			end
 		end
 
-		it "should user stay in inscription page because login is not present" do
-			@params_user[:login]=""
-			post '/users', @params_user 
-			last_response.should be_ok
-			last_request.path.should == '/users'
-		end
+		context "With an origin" do
 
-		it "should user stay in inscription page because login is not good" do
-			@params_user['login'] = "_-Pat-_"
-			post '/users', @params_user
-			last_response.should be_ok
-			last_request.path.should == '/users'
-		end
+			before (:each) do
+				@params_user={'login' => "Patrick", 'password' => "pass", 'password_confirmation' => "pass"}
+				@app = App.new
+				@app.stub(:url).and_return('http://app.fr')
+				@app.stub(:name).and_return('app')
+				@app.stub(:admin).and_return('Login')
+			end	
 
-		it "should user stay in inscription page because password is different of password_confirmation" do
-			@params_user['password_confirmation'] = "bad_pass"
-			post '/users', @params_user
-			last_response.should be_ok
-			last_request.path.should == '/users'
-		end
+			it "should create with success and redirect the user at the app page" do
+				App.should_receive(:find_by_name).with('app').and_return(@app)
+				post '/users?origin=/protected&nameapp=app', @params_user
+				last_request.env['rack.session']['current_user'].should == 'Patrick'
+				last_response.should be_redirect
+				follow_redirect!
+				last_request.url.should == 'http://app.fr/protected?login=Patrick&secret=secret'
+			end
 
-		it "should stay in inscription page because login exist" do
-			post '/users', @params_user
-			get '/sessions/disconnect'
-			post '/users', params={'login' => "Patrick", 'password' => "mdp", 'password_confirmation' => "mdp"}
-			last_response.should be_ok
-			last_request.path.should == '/users'
+			it "should user stay in inscription page because login is not present" do
+				@params_user[:login]=""
+				post '/users?origin=/protected&nameapp=app', @params_user 
+				last_response.should be_ok
+				last_request.path.should == '/users'
+			end
+
+			it "should user stay in inscription page because login is not good" do
+				@params_user['login'] = "_-Pat-_"
+				post '/users?origin=/protected&nameapp=app', @params_user
+				last_response.should be_ok
+				last_request.path.should == '/users'
+			end
+
+			it "should user stay in inscription page because password is different of password_confirmation" do
+				@params_user['password_confirmation'] = "bad_pass"
+				post '/users?origin=/protected&nameapp=app', @params_user
+				last_response.should be_ok
+				last_request.path.should == '/users'
+			end
+
+			it "should stay in inscription page because login exist" do
+				post '/users', @params_user
+				get '/sessions/disconnect'
+				post '/users?origin=/protected&nameapp=app', params={'login' => "Patrick", 'password' => "mdp", 'password_confirmation' => "mdp"}
+				last_response.should be_ok
+				last_request.path.should == '/users'
+			end
 		end
 	end
 	
@@ -191,6 +243,52 @@ describe "sauth" do
 				last_request.path.should == '/app/sessions/new'
 			end
 		end
+	end
+
+	describe "post /:app_name/sessions" do
+
+		before(:each) do
+			@app = App.new
+			@app.stub(:url).and_return('http://app.fr')
+			@app.stub(:name).and_return('app')
+			@app.stub(:admin).and_return('Patrick')
+			@user=User.new
+			@user.stub(:login).and_return('Patrick')
+			@user.stub(:password).and_return('pass')
+		end
+
+		describe "The user is connected" do
+
+			before(:each) do
+				User.should_receive(:authenticate).with('Patrick', 'pass').and_return(@user)
+				User.should_receive(:find_by_login).with('Patrick').and_return(@user)
+				App.should_receive(:find_by_name).with('app').and_return(@app)
+				post '/sessions', params={'login' => 'Patrick', 'password' => 'pass'}
+			end
+
+			after(:each) do
+				post '/disconnect'
+			end
+
+			it "should redirect the user to the origin page of the application" do
+				User.should_receive(:find_by_login).with('Patrick').and_return(@user)
+				post '/app/sessions?origin=/protected'
+				last_response.should be_redirect
+				follow_redirect!
+				last_request.url.should == 'http://app.fr/protected?login=Patrick&secret=secret'
+			end
+		end
+
+
+		describe "The user is not connected" do
+
+			it "should render the form which allows the user to authenticate on the authentication service " do
+				post '/app/sessions?origin=/protected'
+				last_response.should be_ok
+				last_request.path.should == '/app/sessions'
+			end
+		end
+	
 	end
 
 	
