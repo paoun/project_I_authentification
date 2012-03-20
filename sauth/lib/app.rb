@@ -49,7 +49,7 @@ class App < ActiveRecord::Base
 			use.app = app
 			use.user = user
 			use.save
-			redirect = app.url+origin+'?login='+user.login
+			redirect = app.url+origin+'?login='+user.login+'&secret=secret'
 		end
 		redirect
 	end

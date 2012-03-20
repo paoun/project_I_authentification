@@ -71,9 +71,7 @@ post '/users' do
 			redirect redirect_app
 		end
 	else
-		user = User.new
-		user.login = params[:login]
-		user.password = params[:password]
+		user = User.new(:login => params[:login],:password => params[:password])
 		if user.valid? && params[:password] == params[:password_confirmation]
 			user.save
 			connect(user)
@@ -121,30 +119,31 @@ post '/sessions' do
 	end
 end
 
-get '/:app_name/sessions/new' do	
+get '/:app_name/sessions/new' do
+
 	if connected?
-		app = App.find_by_name(params['app_name'])
-		user = User.find_by_login(session[:current_user])
-		redirect_app = App.redirect(app,params['origin'],user)
-		redirect redirect_app
+		app = App.find_by_name(params[:app_name])
+		user = User.find_by_login(current_user)
+		redirect App.redirect(app,params['origin'],user)
 	else
+
 		erb :"sessions/new"
 	end
 end
 
 post '/:app_name/sessions' do
 	if connected?
-		app = App.find_by_name(params['app_name'])
+		app = App.find_by_name(params[:app_name])
 		user = User.find_by_login(current_user)
-		redirect_app = App.redirect(app,params['origin'],user)
-		redirect redirect_app
+		redirect App.redirect(app,params['origin'],user)
 	else
+			
 		user = User.find_by_login(params[:login])
 		if User.authenticate(params[:login], params[:password])
 			connect(user)
-			app = App.find_by_name(params['app_name'])
-			redirect_app = App.redirect(app,params['origin'],user)
-			redirect redirect_app
+			app = App.find_by_name(params[:app_name])
+			puts App.redirect(app,params['origin'],user)
+			redirect App.redirect(app,params['origin'],user)
 		else
 			@error_informations = false
 			@error_login_not_exists = false
@@ -169,11 +168,7 @@ end
 
 post '/app' do
 	if connected?
-		app = App.new
-		app.name = params[:name]
-		app.url = params[:url]
-		app.admin = current_user
-	
+		app = App.new(:name => params[:name],:url=> params[:url],:admin=>current_user)
 		if app.valid?
 			app.save
 			redirect '/'
