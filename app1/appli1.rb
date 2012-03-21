@@ -16,6 +16,7 @@ get '/protected' do
   	if params[:secret]=settings.secret
 		session[:current_user_app]=params["login"]
   	end
+
   	if !session[:current_user_app].nil? || !params["login"].nil? 
 		erb :"protected"
   	else
