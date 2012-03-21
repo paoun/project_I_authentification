@@ -19,7 +19,7 @@ class App < ActiveRecord::Base
 	end
 
 	def self.get_apps(user_name) 
-		App.find_all_by_user_id(User.find_by_login(username))
+		App.find_all_by_admin(user_name)
 	end
 
 	def self.delete_apps(app_id,user)
