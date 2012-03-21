@@ -9,4 +9,6 @@ class Use < ActiveRecord::Base
 	#Validators
 	validates :user_id, :presence => true
 	validates :app_id, :presence => true
+
+	validates_uniqueness_of :app_id, :scope => :user_id
 end

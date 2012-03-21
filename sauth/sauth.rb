@@ -142,7 +142,6 @@ post '/:app_name/sessions' do
 		if User.authenticate(params[:login], params[:password])
 			connect(user)
 			app = App.find_by_name(params[:app_name])
-			puts App.redirect(app,params['origin'],user)
 			redirect App.redirect(app,params['origin'],user)
 		else
 			@error_informations = false
