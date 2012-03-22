@@ -47,52 +47,64 @@ describe "sauth" do
 
 	describe "post /users" do
 
-		context "there is not an origin" do
+		describe "the origin is the sauth" do
 
 			before (:each) do
 				@params_user={'login' => "Patrick", 'password' => "pass", 'password_confirmation' => "pass"}
 			end	
 
-			it "should create with success" do
-				post '/users', @params_user
-				last_request.env['rack.session']['current_user'].should == 'Patrick'
-				last_response.status.should == 302
-				last_response.should be_redirect
-				follow_redirect!
-				last_request.path.should == '/'
+			context "The registration is good" do
+			
+				before (:each) do
+					post '/users', @params_user
+				end
+		
+				it "should have Patrick as current_user" do
+					last_request.env['rack.session']['current_user'].should == 'Patrick'
+				end
+	
+				it "should redirect the user to /" do
+					last_response.should be_redirect
+					follow_redirect!
+					last_request.path.should == '/'
+				end
+		
 			end
 
-			it "should user stay in inscription page because login is not present" do
-				@params_user[:login]=""
-				post '/users', @params_user 
-				last_response.should be_ok
-				last_request.path.should == '/users'
-			end
+			context "The registration is not good" do
 
-			it "should user stay in inscription page because login is not good" do
-				@params_user['login'] = "_-Pat-_"
-				post '/users', @params_user
-				last_response.should be_ok
-				last_request.path.should == '/users'
-			end
+				it "should stay the user to /users because login is not present" do
+					@params_user[:login]=""
+					post '/users', @params_user 
+					last_response.should be_ok
+					last_request.path.should == '/users'
+				end
 
-			it "should user stay in inscription page because password is different of password_confirmation" do
-				@params_user['password_confirmation'] = "bad_pass"
-				post '/users', @params_user
-				last_response.should be_ok
-				last_request.path.should == '/users'
-			end
+				it "should stay the user to /users because login is not good" do
+					@params_user['login'] = "_-Pat-_"
+					post '/users', @params_user
+					last_response.should be_ok
+					last_request.path.should == '/users'
+				end
 
-			it "should stay in inscription page because login exist" do
-				post '/users', @params_user
-				get '/sessions/disconnect'
-				post '/users', params={'login' => "Patrick", 'password' => "mdp", 'password_confirmation' => "mdp"}
-				last_response.should be_ok
-				last_request.path.should == '/users'
+				it "should stay the user to /users because password is different of password_confirmation" do
+					@params_user['password_confirmation'] = "bad_pass"
+					post '/users', @params_user
+					last_response.should be_ok
+					last_request.path.should == '/users'
+				end
+
+				it "should stay the user to /users because login exist" do
+					post '/users', @params_user
+					get '/sessions/disconnect'
+					post '/users', params={'login' => "Patrick", 'password' => "mdp", 'password_confirmation' => "mdp"}
+					last_response.should be_ok
+					last_request.path.should == '/users'
+				end
 			end
 		end
 
-		context "With an origin" do
+		describe "The origin is an application" do
 
 			before (:each) do
 				@params_user={'login' => "Patrick", 'password' => "pass", 'password_confirmation' => "pass"}
@@ -100,44 +112,56 @@ describe "sauth" do
 				@app.stub(:url).and_return('http://app.fr')
 				@app.stub(:name).and_return('app')
 				@app.stub(:admin).and_return('Login')
+				
 			end	
 
-			it "should create with success and redirect the user at the app page" do
-				App.should_receive(:find_by_name).with('app').and_return(@app)
-				post '/users?origin=/protected&nameapp=app', @params_user
-				last_request.env['rack.session']['current_user'].should == 'Patrick'
-				last_response.should be_redirect
-				follow_redirect!
-				last_request.url.should == 'http://app.fr/protected?login=Patrick&secret=secret'
-			end
+			context "The redirection to the app is good" do
 
-			it "should user stay in inscription page because login is not present" do
-				@params_user[:login]=""
-				post '/users?origin=/protected&nameapp=app', @params_user 
-				last_response.should be_ok
-				last_request.path.should == '/users'
-			end
+				before(:each) do
+					App.should_receive(:find_by_name).with('app').and_return(@app)
+					post '/users?origin=/protected&nameapp=app', @params_user
+				end
 
-			it "should user stay in inscription page because login is not good" do
-				@params_user['login'] = "_-Pat-_"
-				post '/users?origin=/protected&nameapp=app', @params_user
-				last_response.should be_ok
-				last_request.path.should == '/users'
-			end
+				it "should have Patrick as current_user" do
+					last_request.env['rack.session']['current_user'].should == 'Patrick'
+				end
 
-			it "should user stay in inscription page because password is different of password_confirmation" do
-				@params_user['password_confirmation'] = "bad_pass"
-				post '/users?origin=/protected&nameapp=app', @params_user
-				last_response.should be_ok
-				last_request.path.should == '/users'
+				it "should redirect the user to the application page" do
+					last_response.should be_redirect
+					follow_redirect!
+					last_request.url.should == 'http://app.fr/protected?login=Patrick&secret=secret'
+				end
 			end
+			context "The redirection to the app is not good" do
 
-			it "should stay in inscription page because login exist" do
-				post '/users', @params_user
-				get '/sessions/disconnect'
-				post '/users?origin=/protected&nameapp=app', params={'login' => "Patrick", 'password' => "mdp", 'password_confirmation' => "mdp"}
-				last_response.should be_ok
-				last_request.path.should == '/users'
+				it "should stay user to /users because the login is not present" do
+					@params_user[:login]=""
+					post '/users?origin=/protected&nameapp=app', @params_user 
+					last_response.should be_ok
+					last_request.path.should == '/users'
+				end
+
+				it "should stay user to /users because the login is not good" do
+					@params_user['login'] = "_-Pat-_"
+					post '/users?origin=/protected&nameapp=app', @params_user
+					last_response.should be_ok
+					last_request.path.should == '/users'
+				end
+
+				it "should stay user to /users because password is different of password_confirmation" do
+					@params_user['password_confirmation'] = "bad_pass"
+					post '/users?origin=/protected&nameapp=app', @params_user
+					last_response.should be_ok
+					last_request.path.should == '/users'
+				end
+
+				it "should stay user to /users because login exist" do
+					post '/users', @params_user
+					get '/sessions/disconnect'
+					post '/users?origin=/protected&nameapp=app', params={'login' => "Patrick", 'password' => "mdp", 'password_confirmation' => "mdp"}
+					last_response.should be_ok
+					last_request.path.should == '/users'
+				end
 			end
 		end
 	end
@@ -156,17 +180,19 @@ describe "sauth" do
 			before do
 				User.should_receive(:authenticate).with('Patrick', 'pass').and_return(@user)
 				User.should_receive(:find_by_login).with('Patrick').and_return(@user)
+				post '/sessions', @params_user
 			end
 			
 
-			it "should authenticate with success" do
-				post '/sessions', @params_user
-				last_response.should be_redirect
-				follow_redirect!
-				last_request.path.should == '/'
+			it "should set a cookie" do
 				last_response.headers["Set-Cookie"].should be_true
 			end
 
+			it "should redirect the user to /" do
+				last_response.should be_redirect
+				follow_redirect!
+				last_request.path.should == '/'
+			end
 		end	
 
 		context "Bad authentication" do	
@@ -232,12 +258,18 @@ describe "sauth" do
 				follow_redirect!
 				last_request.url.should == 'http://app.fr/protected?login=Patrick&secret=secret'
 			end
+
+			it "should have Patrick as current_user" do
+				User.should_receive(:find_by_login).with('Patrick').and_return(@user)
+				get '/app/sessions/new?origin=/protected'
+				last_request.env['rack.session']['current_user'].should == 'Patrick'
+			end
 		end
 
 
 		describe "The user is not connected" do
 
-			it "should render the form which allows the user to authenticate on the authentication service " do
+			it "should redirect the user to /app/sessions/new" do
 				get '/app/sessions/new?origin=/protected'
 				last_response.should be_ok
 				last_request.path.should == '/app/sessions/new'
@@ -264,6 +296,8 @@ describe "sauth" do
 				User.should_receive(:find_by_login).with('Patrick').and_return(@user)
 				App.should_receive(:find_by_name).with('app').and_return(@app)
 				post '/sessions', params={'login' => 'Patrick', 'password' => 'pass'}
+				User.should_receive(:find_by_login).with('Patrick').and_return(@user)
+				post '/app/sessions?origin=/protected'
 			end
 
 			after(:each) do
@@ -271,18 +305,20 @@ describe "sauth" do
 			end
 
 			it "should redirect the user to the origin page of the application" do
-				User.should_receive(:find_by_login).with('Patrick').and_return(@user)
-				post '/app/sessions?origin=/protected'
 				last_response.should be_redirect
 				follow_redirect!
 				last_request.url.should == 'http://app.fr/protected?login=Patrick&secret=secret'
+			end
+
+			it "should have Patrick as current_user" do
+				last_request.env['rack.session']['current_user'].should == 'Patrick'
 			end
 		end
 
 
 		describe "The user is not connected" do
 
-			it "should render the form which allows the user to authenticate on the authentication service " do
+			it "should redirect the user to /app/sessions" do
 				post '/app/sessions?origin=/protected'
 				last_response.should be_ok
 				last_request.path.should == '/app/sessions'
@@ -292,7 +328,7 @@ describe "sauth" do
 	end
 
 	
-	context "creation and delete of applications" do
+	describe "creation and delete of applications" do
 
 		before (:each) do
 			@user=User.new
@@ -309,27 +345,48 @@ describe "sauth" do
 				@params_app={'name' => "Patrick_App", 'url' => "http://App"}
 			end
 
-			it "should create with success" do
-				post '/app', @params_app
-				app = App.find_by_name("Patrick_App")
-				app.nil?.should == false
-				follow_redirect!
-				last_request.path.should == '/'	
+			context "good application" do
+				
+				before (:each) do
+					post '/app', @params_app
+				end	
+
+				it "should create with success" do
+					app = App.find_by_name("Patrick_App")
+					app.nil?.should == false
+				end
+
+				it "should redirect the user to /" do
+					follow_redirect!
+					last_request.path.should == '/'	
+				end
+
 			end
 
-			it "should not create with success (bad url)" do
-				@params_app['url'] = "bad_url"
-				post '/app', @params_app
-				last_request.path.should == '/app'
-			end
+			context "bad application" do
 
-			it "should not create with success (user is not connected)" do
-				post '/disconnect'
-				post '/app', @params_app
-				follow_redirect!
-				last_request.path.should == '/'
-			end
+				before (:each) do
+					@params_app['url'] = "bad_url"
+					post '/app', @params_app
+				end
+
+				it "should not create with success (bad url)" do
+					app = App.find_by_name("Patrick_App")
+					app.nil?.should == true
+				end
 	
+				it "should stay the user to /app" do
+					last_request.path.should == '/app'
+				end
+
+				it "should not create with success (user is not connected)" do
+					@params_app['url'] = "http://app"
+					post '/disconnect'
+					post '/app', @params_app
+					follow_redirect!
+					last_request.path.should == '/'
+				end
+			end
 		end
 
 		describe "get /app/delete" do
@@ -347,48 +404,77 @@ describe "sauth" do
 				@app.destroy
 			end
 
-			it "should delete the application with success" do
-				app = App.find_by_name("Patrick_App")
-				app.nil?.should == false
-				app.name.should == "Patrick_App"
-				get "/app/delete?app=10"
-				app = App.find_by_id(10)
-				app.nil?.should == true
-				follow_redirect!
-				last_request.path.should == '/'
+			context "the application is delete with success" do
+
+				it "should the application exist" do
+					app = App.find_by_name("Patrick_App")
+					app.nil?.should == false
+					app.name.should == "Patrick_App"
+				end
+
+				it "should delete the application(id = 10) with success" do
+					get "/app/delete?app=10"
+					app = App.find_by_id(10)
+					app.nil?.should == true
+				end
+
+				it "should redirect the user to /" do
+					follow_redirect!
+					last_request.path.should == '/'
+				end
 			end
 
-			it "should not delete with success (not connected)" do	
-				get '/sessions/disconnect'
-				app = App.find_by_name("Patrick_App")
-				app.nil?.should == false
-				get "/app/delete?app=10"
-				app = App.find_by_id(10)
-				app.nil?.should == false
-				follow_redirect!
-				last_request.path.should == '/'
+			context "the application is not delete with success" do
 
+				it "should not delete with success (not connected)" do	
+					get '/sessions/disconnect'
+					app = App.find_by_name("Patrick_App")
+					app.nil?.should == false
+					get "/app/delete?app=10"
+					app = App.find_by_id(10)
+					app.nil?.should == false
+				end
+
+				it "should redirect the user to / (not connected)" do
+					get '/sessions/disconnect'
+					follow_redirect!
+					last_request.path.should == '/'
+				end
+
+				it "should not delete with success (application not exist, id = 9999999)" do
+					get "/app/delete?app=9999999"
+					app = App.find_by_id(9999999)
+					app.nil?.should == true
+					follow_redirect!
+					last_request.path.should == '/'
+				end	
+
+				describe "the user is not the admin of the application" do
+
+					before(:each) do
+						get '/sessions/disconnect'
+						post '/users', params={'login' => "NewLogin", 'password' => "password", 'password_confirmation' => "password"}
+					end
+
+					it "should Patrick_App exist" do
+						app = App.find_by_name("Patrick_App")
+						app.nil?.should == false
+					end
+
+					it "should the admin of Patrick_App is Patrick" do
+						app = App.find_by_name("Patrick_App")
+						app.admin.should == 'Patrick'
+					end
+
+					it "should not delete with success (not admin of the application)" do
+						get "/app/delete?app=10"
+						app = App.find_by_id(10)
+						app.nil?.should == false
+						follow_redirect!
+						last_request.path.should == '/'
+					end
+				end	
 			end
-
-			it "should not delete with success (application not exist)" do
-				get "/app/delete?app=9999999"
-				app = App.find_by_id(9999999)
-				app.nil?.should == true
-				follow_redirect!
-				last_request.path.should == '/'
-			end	
-
-			it "should not delete with success (not admin)" do
-				get '/sessions/disconnect'
-				post '/users', params={'login' => "NewLogin", 'password' => "password", 'password_confirmation' => "password"}
-				app = App.find_by_name("Patrick_App")
-				app.nil?.should == false
-				get "/app/delete?app=10"
-				app = App.find_by_id(10)
-				app.nil?.should == false
-				follow_redirect!
-				last_request.path.should == '/'
-			end	
 		end
 	end
 
@@ -403,33 +489,56 @@ describe "sauth" do
 			post '/sessions', params={'login' => "admin", 'password' => "pass"}
 		end
 
-		it "should redirect in admin page with success (login = admin)" do
-			last_request.env['rack.session']['current_user'].should == 'admin'
-			get '/sauth/admin'
-			last_request.path.should == '/sauth/admin'
+		context "the user is the sauth admin" do
+
+			it "should have admin as current_user" do
+				last_request.env['rack.session']['current_user'].should == 'admin'
+			end
+
+			it "should redirect the user to /sauth/admin with success (login = admin)" do
+				User.should_receive(:find_by_login).with('admin').and_return(@user)
+				get '/sauth/admin'
+				last_request.path.should == '/sauth/admin'
+			end
 		end
 
-		it "should redirect in the profil page (not admin page, login /= admin)" do
-			get '/sessions/disconnect'
-			@userNotAdmin=User.new
-			@userNotAdmin.stub(:login).and_return('Patrick')
-			@userNotAdmin.stub(:password).and_return('pass')
-			User.should_receive(:authenticate).with('Patrick', 'pass').and_return(@userNotAdmin)
-			User.should_receive(:find_by_login).with('Patrick').and_return(@userNotAdmin)
-			post '/sessions', params={'login' => "Patrick", 'password' => "pass"}
-			last_request.env['rack.session']['current_user'].should == 'Patrick'
-			get '/sauth/admin'
-			follow_redirect!
-			last_request.path.should == '/'
-			follow_redirect!
-			last_request.path.should == '/Patrick'
-		end
+		context "Not redirect the user to /sauth/admin with success" do
 
-		it "should redirect in the main page (not connected)" do
-			get '/sessions/disconnect'
-			get '/sauth/admin'
-			follow_redirect!
-			last_request.path.should == '/'
+			before (:each) do
+				get '/sessions/disconnect'
+			end
+
+			describe "the user is not the sauth admin" do
+			
+				before(:each) do
+					@userNotAdmin=User.new
+					@userNotAdmin.stub(:login).and_return('Patrick')
+					@userNotAdmin.stub(:password).and_return('pass')
+					User.should_receive(:authenticate).with('Patrick', 'pass').and_return(@userNotAdmin)
+					User.should_receive(:find_by_login).with('Patrick').and_return(@userNotAdmin)
+					post '/sessions', params={'login' => "Patrick", 'password' => "pass"}
+				end
+
+				it "should have Patrick as current_user" do
+					last_request.env['rack.session']['current_user'].should == 'Patrick'
+				end
+
+				it "should redirect the user to /Patrick" do
+					User.should_receive(:find_by_login).with('Patrick').and_return(@userNotAdmin)
+					get '/sauth/admin'
+					follow_redirect!
+					last_request.path.should == '/'
+					follow_redirect!
+					last_request.path.should == '/Patrick'
+				end
+
+			end
+
+			it "should redirect in the main page (not connected)" do
+				get '/sauth/admin'
+				follow_redirect!
+				last_request.path.should == '/'
+			end
 		end
 	end
 
@@ -454,37 +563,91 @@ describe "sauth" do
 
 		end
 		
-		it "should delete the user with success (the user is the admin)" do
-			post '/sessions', @params_admin
-			user = User.find_by_id(10)
-			user.nil?.should == false
-			get "/sauth/users/delete?user=10"
-			user = User.find_by_id(10)
-			user.nil?.should == true
-			follow_redirect!
-			last_request.path.should == '/sauth/admin'
+		context "Delete the user with success" do
+
+			before(:each) do
+				post '/sessions', @params_admin
+			end
+
+			it "should have admin as current_user" do
+				last_request.env['rack.session']['current_user'].should == 'admin'
+			end
+
+			it "should the user exist" do
+				user = User.find_by_id(10)
+				user.nil?.should == false
+			end
+
+			it "should delete the user with success" do
+				get "/sauth/users/delete?user=10"
+				user = User.find_by_id(10)
+				user.nil?.should == true
+			end
+
+			it "should redirect the user(=admin) to /sauth/admin" do
+				follow_redirect!
+				last_request.path.should == '/'
+				follow_redirect!
+				last_request.path.should == '/sauth/admin'
+			end
 		end
 
-		it "should not delete the user with success (not admin)" do
-			get '/sessions/disconnect'
-			post '/sessions', @params_user 
-			user = User.find_by_id(10)
-			user.nil?.should == false
-			get "/sauth/users/delete?user=10"
-			user = User.find_by_id(10)
-			user.nil?.should == false
-			follow_redirect!
-			last_request.path.should == '/'
-			follow_redirect!
-			last_request.path.should == '/Patrick'
-		end
+		context "Not delete the user with success" do
 
-		it "should not delete the user with success (user not exist)" do
-			get '/sessions/disconnect'
-			post '/sessions', @params_admin
-			get "/sauth/users/delete?user=999999999"
-			follow_redirect!
-			last_request.path.should == '/sauth/admin'
+			before(:each) do
+				get '/sessions/disconnect'
+			end
+			
+			describe "the user is not the sauth admin" do
+
+				before(:each) do
+					post '/sessions', @params_user 
+				end
+
+				it "should have Patrick as current_user" do
+					last_request.env['rack.session']['current_user'].should == 'Patrick'
+				end
+	
+				it "should the user exist" do
+					user = User.find_by_id(10)
+					user.nil?.should == false
+				end
+	
+				it "should not delete the user with success" do
+					get "/sauth/users/delete?user=10"
+					user = User.find_by_id(10)
+					user.nil?.should == false
+				end
+
+				it "should redirect the user to /Patrick" do
+					follow_redirect!
+					last_request.path.should == '/'
+					follow_redirect!
+					last_request.path.should == '/Patrick'
+				end
+			end
+
+			describe "the user to delete not exists" do
+			
+				before(:each) do
+					post '/sessions', @params_admin
+				end
+
+				it "should have admin as current_user" do
+					last_request.env['rack.session']['current_user'].should == 'admin'
+				end
+
+				it "should the user does not exist" do
+					user = User.find_by_id(999999999)
+					user.nil?.should == true
+				end
+
+				it "should redirect the admin to /sauth/admin" do
+					get "/sauth/users/delete?user=999999999"
+					follow_redirect!
+					last_request.path.should == '/sauth/admin'
+				end
+			end
 		end
 	end
 end
