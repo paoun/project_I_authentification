@@ -6,6 +6,16 @@ set :secret, 'secret'
 
 enable :sessions
 
+helpers do
+	def current_user
+    	session["current_user_app"]
+  	end
+end
+
+before '/protected' do
+      redirect 'http://localhost:4567/appli1/sessions/new?origin=/protected' if !current_user && !params['secret']
+end
+
 get '/' do
 	erb :"main_page"
 end

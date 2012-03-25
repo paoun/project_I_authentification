@@ -16,7 +16,7 @@
 			<p>Voici la liste d'applications dont vous êtes l'administrateur</p>
 			<ul>
 				<% app.each do |a| %>
-					<li><%=a.name%> URL -> <%=a.url%> - <a href="/app/delete?app=<%=a.id%>">Supprimer</a> </li>
+					<li><a href="<%=a.url%>"> <%=a.name%></a> <a href="/app/delete?app=<%=a.id%>">Supprimer</a> </li>
 				<% end %>
 			</ul>
 		</div>
@@ -25,16 +25,16 @@
 		<p>Vous êtes administrateur d'aucune application</p>
 	<%end%>
 
-	<% user = User.find_by_login(@user) %>
-	<% util = Use.where(:user_id => user.id) %>
-	<% if !util.empty? %>
+	<% 
+	 util = Use.find_all_by_user_id(User.find_by_login(@user))
+	 if !util.empty? %>
 
 	<div class="Utilisations">
 			<p>Voici la liste d'applications que vous utilisez</p>
 			<ul>
 				<% util.each do |u| %>
 					<% app = App.find_by_id(u.app_id) %>
-					<li><%=app.name%> URL -> <%=app.url%> </li>
+					<li><a href="<%=app.url%>"><%=app.name%></a></li>
 				<% end %>
 			</ul>
 	</div>

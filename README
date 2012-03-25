@@ -1,9 +1,113 @@
-Journal de bord des commits + travail à effectuer :
+**************************************************************************
+*																		 *
+*						   Projet authentification						 *
+*							   AOUN Patrick								 *
+*							      2A I&R								 *
+*																		 *
+**************************************************************************
 
-6 mars 2012 : Création de la BDD
-7 mars 2012 : Création de sauth avec ces tests. Prochaine étape finir la classe sauth et ses tests.
-10 mars 2012 : Amélioration de sauth. Mise en place dans les templates des différents cas (login absent, password mauvais). Amélioration des spec de sauth et user. A continuer de faire : travailler sur sauth et sur les différents applis. 
-11 mars 2012 : Ajout de tests et amélioration de sauth
-12 mars 2012 : Ajout de tests pour tester la création d'applications
+--------------------------------------------------------------------------
+-						Lancement des tests							     -
+--------------------------------------------------------------------------
+
+Pour lancer les tests veuillez suivre les étapes suivantes :
+
+1 - Lancement des tests de sauth :
+
+	-> Etre à la racine du projet
+	-> cd sauth/spec
+	-> rspec * --format documentation (pour lancer tous les tests présents, 80 tests)
+
+2 - Lancement des tests de app1 :
+
+	-> Etre à la racine du projet
+	-> cd app1/spec
+	-> rspec * --format documentation (pour lancer tous les tests, 3 tests)
+
+3 - Lancement des tests de app2 :
+
+	-> Etre à la racine du projet
+	-> cd app2/spec
+	-> rspec * --format documentation (pour lancer tous les tests, 3 tests)
+
+
+--------------------------------------------------------------------------
+-						Utilisation du sauth						     -
+--------------------------------------------------------------------------
+
+Pour utiliser le service d'authentification et les deux applications, ouvrir 3 terminaux.
+Il faut avant tout effectuer les tests (si ce n'est déjà fait). Cela permet de vider la bdd.
+Une fois ces choses faites, veuillez suivre les instructions suivantes :
+
+1 - Lancement des serveurs
+		
+		-> Lancement de sauth
+		
+			- Ouvrir le terminal 1
+			- Se placer à la racine du projet
+			- cd sauth
+			- ruby sauth.rb
+			- L'adresse du serveur est : localhost:4567
+
+		-> Lancement de app1
+
+			- Ouvrir le terminal 2
+			- Se placer à la racine du projet
+			- cd app1
+			- ruby appli1.rb
+			- L'adresse du serveur est : localhost:1990
+
+		-> Lancement de app2
+
+			- Ouvrir le terminal 3
+			- Se placer à la racine du projet
+			- cd app2
+			- ruby appli2.rb
+			- L'adresse du serveur est : localhost:9999
+
+2 - L'inscription
+
+	Pour pouvoir utiliser correctement le service d'authenfication, il faut enregistrer un utilisateur.
+	En lançant localhost:4567 créez un nouveau compte. (NB : vous pouvez créer un super utilisateur en prenant comme login "admin").
+	Veuillez donc remplir les champs demandés. Le login doit faire plus de 4 caractères et comporter seulement des chiffres et des lettres.
+	Une fois votre utilisateur enregistrer vous serez automatiquement diriger vers sa page personnel.
+
+3 - Création d'une application cliente
+
+	Pour pouvoir utiliser les deux application clientes il faut tout d'abord les enregistrer. Pour se faire sur votre profil veuillez créer une nouvelle application.
+	Le nom de l'application cliente devra être : "appli1" et son URL : "http://localhost:1990"
+	Voilà votre première application cliente est créée. Vous pouvez y accéder directement en cliquant sur le nom de l'application. Vous pouvez également supprimer votre 		application.
+	Si vous voulez utiliser la deuxième application cliente, faîtes la même démarche avec pour nom de l'application : "appli2" et pous URL :"http://localhost:9999"
+
+4 - Etre super utilisateur
+
+	Vous pouvez être le super utilisateur du sauth si vous créez un utilisateur ayant pour login "admin". Le super utilisateur peut faire les mêmes actions que les autre 		utilisateurs mais il peut également supprimer n'importe quel membre du sauth.
+
+5 - L'utilisation de l'application cliente 1
+	
+	Pour utiliser l'application cliente 1 il faut que cette dernière ait bien été créée (nom : appli1 et URL : http://localhost:1990).
+	Cela fait, allez à l'adresse http://localhost:1990.
+	Accèdez ensuite à la zone privée. Si vous n'étiez pas connecté au sauth vous devrez aors vous authentifier pour pouvoir avoir accès à la zone privée.
+	Si vous étiez connecté, vous serez redirigez directement à la zone privée.
+
+
+
+
+NB : J'ai remarqué une petite erreur dans mon programme. En effet l'admin peut supprimer un utilisateur. Imaginons que celui ci avait créé une application. Je ne supprime pas l'application juste l'utilisateur, ainsi l'application reste utilisable. Cependant si après la suppression de l'utilisateur (que l'on nommera 'user"), un autre utilisateur veut créer un compte avec pour login "user" (il peut le faire vu que l'ancien "user" a était supprimé. Alors le nouveau user se retrouve administrateur de l'application en question.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

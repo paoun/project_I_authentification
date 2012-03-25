@@ -16,6 +16,12 @@ describe "sauth" do
 		Use.destroy_all
 	end
 
+	after (:each) do
+		App.destroy_all
+		User.destroy_all
+		Use.destroy_all
+	end
+
 	describe "The user wants to acces at differents pages" do
 
 		it "status should return 200 if the user go to /" do
