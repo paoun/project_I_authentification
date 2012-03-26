@@ -33,15 +33,34 @@ helpers do
 	
 end
 
+before '/' do
+	redirect '/sessions/new' if !connected?
+end
+
+
+before '/app/new' do
+	redirect '/sessions/new' if !connected?
+end
+
+before '/app' do
+	redirect '/' if !connected?
+end
+
+
+before '/sauth/admin' do
+	redirect '/' if !connected?
+end
+
+
+before '/app/delete' do
+	redirect '/' if !connected?
+end
+
 get '/' do
-	if connected?
-		if session[:current_user] == "admin"
-			redirect '/sauth/admin'
-		else
-			redirect "/#{current_user}"
-		end
+	if session[:current_user] == "admin"
+		redirect '/sauth/admin'
 	else
-		erb :"sessions/new"
+			redirect "/#{current_user}"
 	end
 end
 
@@ -128,7 +147,6 @@ get '/:app_name/sessions/new' do
 		user = User.find_by_login(current_user)
 		redirect App.redirect(app,params['origin'],user)
 	else
-
 		erb :"sessions/new"
 	end
 end
@@ -160,49 +178,33 @@ post '/:app_name/sessions' do
 end
 
 get '/app/new' do
-	if connected?
 		erb :"app/new"
-	else
-		erb :"sessions/new"
-	end
 end
 
 post '/app' do
-	if connected?
-		app = App.new(:name => params[:name],:url=> params[:url],:admin=>current_user)
-		if app.valid?
-			app.save
-			redirect '/'
-		else
-			@error_app = true
-			erb :"app/new"
-		end
-	else
+	app = App.new(:name => params[:name],:url=> params[:url],:admin=>current_user)
+	if app.valid?
+		app.save
 		redirect '/'
+	else
+		@error_app = true
+		erb :"app/new"
 	end
 end
 
 get '/app/delete' do
-	if connected?
-		App.delete_apps(params["app"],current_user)
-		redirect '/'
-	else
-		redirect '/'
-	end
+	App.delete_apps(params["app"],current_user)
+	redirect '/'
 end
 
 get '/sauth/admin' do
-	if connected?
-		if current_user == "admin"
-			@user = current_user
-			@list_user = User.all
-			admin = App.find_by_admin(@user)
-			@apps = App.where(:admin => @user)
-			@util = Use.where(:user_id => User.find_by_login(@user))
-			erb :"/sauth/admin"
-		else
-			redirect '/'
-		end
+	if current_user == "admin"
+		@user = current_user
+		@list_user = User.all
+		admin = App.find_by_admin(@user)
+		@apps = App.where(:admin => @user)
+		@util = Use.where(:user_id => User.find_by_login(@user))
+		erb :"/sauth/admin"
 	else
 		redirect '/'
 	end

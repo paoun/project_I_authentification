@@ -24,9 +24,9 @@ describe "sauth" do
 
 	describe "The user wants to acces at differents pages" do
 
-		it "status should return 200 if the user go to /" do
+		it "status should return 302 if the user go to /" do
 			get '/'
-			last_response.status.should == 200
+			last_response.status.should == 302
 		end
 
 		it "status should return 200 if the user go to /:current_user" do
@@ -44,9 +44,9 @@ describe "sauth" do
 			last_response.status.should == 200
 		end
 
-		it "status should return 200 if the user go to /app/new" do
+		it "status should return 302 if the user go to /app/new" do
 			get '/app/new'
-			last_response.status.should == 200
+			last_response.status.should == 302
 		end
 
 	end
