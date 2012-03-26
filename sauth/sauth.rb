@@ -48,6 +48,8 @@ end
 get '/:current_user' do
 	@user = session[:current_user]
 	admin = App.find_by_admin(@user)
+	@apps = App.where(:admin => @user)
+	@util = Use.where(:user_id => User.find_by_login(@user))
 	if admin
 		@app = true
 		@app_name = admin.name
@@ -194,6 +196,9 @@ get '/sauth/admin' do
 		if current_user == "admin"
 			@user = current_user
 			@list_user = User.all
+			admin = App.find_by_admin(@user)
+			@apps = App.where(:admin => @user)
+			@util = Use.where(:user_id => User.find_by_login(@user))
 			erb :"/sauth/admin"
 		else
 			redirect '/'

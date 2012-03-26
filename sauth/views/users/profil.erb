@@ -10,12 +10,11 @@
 		<p> Vous êtes désormais administrateur de <%= @app_name %> d'URL <%= @app_url %> </p>
 	<% end %>
 
-	<% app = App.where(:admin => @user)
-	   if !app.empty? %>
+	<% if @apps %>
 		<div class="applications">
 			<p>Voici la liste d'applications dont vous êtes l'administrateur</p>
 			<ul>
-				<% app.each do |a| %>
+				<% @apps.each do |a| %>
 					<li><a href="<%=a.url%>"> <%=a.name%></a> <a href="/app/delete?app=<%=a.id%>">Supprimer</a> </li>
 				<% end %>
 			</ul>
@@ -25,14 +24,12 @@
 		<p>Vous êtes administrateur d'aucune application</p>
 	<%end%>
 
-	<% 
-	 util = Use.find_all_by_user_id(User.find_by_login(@user))
-	 if !util.empty? %>
+	<% if @util %>
 
 	<div class="Utilisations">
 			<p>Voici la liste d'applications que vous utilisez</p>
 			<ul>
-				<% util.each do |u| %>
+				<% @util.each do |u| %>
 					<% app = App.find_by_id(u.app_id) %>
 					<li><a href="<%=app.url%>"><%=app.name%></a></li>
 				<% end %>
